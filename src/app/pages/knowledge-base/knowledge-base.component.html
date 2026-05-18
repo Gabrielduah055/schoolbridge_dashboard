@@ -6,7 +6,7 @@
           <path [attr.d]="getIconPath('bot')" />
         </svg>
       </span>
-      <p>Your AI bot is active and trained on <strong>8 documents</strong>. Last updated 2 hours ago.</p>
+      <p>{{ brainSummary }}</p>
       <span class="live-pill">Bot is Live <b></b></span>
     </div>
 
@@ -32,7 +32,19 @@
             <h2>Document Library</h2>
             <p>Uploaded Documents</p>
           </div>
-          <button class="text-action" type="button">Upload New +</button>
+          <button class="text-action" type="button" (click)="knowledgeFile.click()">Upload New +</button>
+        </div>
+
+        <div *ngIf="loading" class="library-state">
+          <p>Loading knowledge documents...</p>
+        </div>
+
+        <div *ngIf="!loading && error" class="library-state error-state">
+          <p>{{ error }}</p>
+        </div>
+
+        <div *ngIf="!loading && !error && documents.length === 0" class="library-state">
+          <p>No knowledge documents found in the backend yet.</p>
         </div>
 
         <div class="document-grid">
@@ -54,7 +66,7 @@
                 <span [class]="'file-chip file-' + document.fileType">{{ document.fileType }}</span>
                 <div>
                   <strong>{{ document.fileName }}</strong>
-                  <p>size/date/2026</p>
+                  <p>{{ document.fileSize }} / {{ document.uploadedAt }}</p>
                 </div>
                 <span class="status-pill">{{ document.status }}</span>
                 <button class="icon-button" type="button" [attr.aria-label]="'More actions for ' + document.title">
@@ -103,10 +115,10 @@
           </div>
           <div class="training-progress">
             <div>
-              <span>5 of 8 recommended documents uploaded</span>
-              <strong>63%</strong>
+              <span>{{ trainingLog.length }} recommended document checks</span>
+              <strong>{{ trainingProgress }}%</strong>
             </div>
-            <i></i>
+            <i [style.width.%]="trainingProgress"></i>
           </div>
         </section>
 
@@ -149,22 +161,30 @@
   <aside class="control-panel">
     <section class="upload-card">
       <h2>Upload Document</h2>
-      <div class="drop-zone">
+      <input
+        #knowledgeFile
+        type="file"
+        accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls"
+        hidden
+        (change)="selectKnowledgeFile($event)"
+      />
+      <button class="drop-zone" type="button" (click)="knowledgeFile.click()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="getIconPath('upload')" />
         </svg>
-        <strong>Bold / document</strong>
-        <span>Background on hover</span>
-      </div>
+        <strong>{{ selectedFile?.name || 'Choose a document' }}</strong>
+        <span>{{ selectedFile ? 'Ready to train' : 'PDF, spreadsheet, text, or document' }}</span>
+      </button>
       <div class="upload-options">
-        <button type="button">Text or / text input...</button>
+        <button type="button" (click)="knowledgeFile.click()">Browse files</button>
         <span class="toggle"></span>
       </div>
-      <button class="upload-button" type="button">
+      <p *ngIf="uploadMessage" class="upload-message">{{ uploadMessage }}</p>
+      <button class="upload-button" type="button" [disabled]="uploading || !selectedFile" (click)="uploadKnowledge()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path [attr.d]="getIconPath('upload')" />
         </svg>
-        Upload & Train Bot
+        {{ uploading ? 'Uploading...' : 'Upload & Train Bot' }}
       </button>
     </section>
 
@@ -177,14 +197,14 @@
           <p>{{ message.text }}</p>
         </article>
       </div>
-      <label class="message-box">
-        <input type="text" placeholder="Message" />
-        <button type="button" aria-label="Send message">
+      <form class="message-box" (ngSubmit)="sendTestMessage()">
+        <input type="text" placeholder="Message" name="chatInput" [(ngModel)]="chatInput" />
+        <button type="submit" aria-label="Send message" [disabled]="sending || !chatInput.trim()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path [attr.d]="getIconPath('send')" />
           </svg>
         </button>
-      </label>
+      </form>
     </section>
   </aside>
 </section>

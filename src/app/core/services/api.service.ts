@@ -1,6 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
+
+export interface ApiStudent {
+  [key: string]: unknown;
+}
+
+export interface ApiKnowledgeItem {
+  [key: string]: unknown;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -13,13 +22,17 @@ export class ApiService {
     return this.http.post(`${this.api}/api/knowledge/upload`, formData);
   }
 
-  getKnowledge() {
-    return this.http.get(`${this.api}/api/knowledge`);
+  getKnowledge(): Observable<ApiKnowledgeItem[]> {
+    return this.http
+      .get<unknown>(`${this.api}/api/knowledge`)
+      .pipe(map((response) => this.extractArray<ApiKnowledgeItem>(response, ['knowledge', 'documents', 'data', 'items', 'results'])));
   }
 
   // Students
-  getStudents() {
-    return this.http.get(`${this.api}/api/students`);
+  getStudents(): Observable<ApiStudent[]> {
+    return this.http
+      .get<unknown>(`${this.api}/api/students`)
+      .pipe(map((response) => this.extractArray<ApiStudent>(response, ['students', 'data', 'items', 'results'])));
   }
 
   addStudent(student: any) {
@@ -42,7 +55,29 @@ export class ApiService {
   }
 
   // Conversations (for Messages Today count)
-  getConversations() {
-    return this.http.get(`${this.api}/api/conversations`);
+  getConversations(): Observable<unknown[]> {
+    return this.http
+      .get<unknown>(`${this.api}/api/conversations`)
+      .pipe(map((response) => this.extractArray<unknown>(response, ['conversations', 'messages', 'data', 'items', 'results'])));
+  }
+
+  private extractArray<T>(response: unknown, keys: string[]): T[] {
+    if (Array.isArray(response)) {
+      return response as T[];
+    }
+
+    if (!response || typeof response !== 'object') {
+      return [];
+    }
+
+    const record = response as Record<string, unknown>;
+    for (const key of keys) {
+      const value = record[key];
+      if (Array.isArray(value)) {
+        return value as T[];
+      }
+    }
+
+    return [];
   }
 }
