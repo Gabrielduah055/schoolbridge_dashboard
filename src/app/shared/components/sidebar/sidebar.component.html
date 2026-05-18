@@ -1,0 +1,24 @@
+<aside class="sidebar" aria-label="SchoolBridge navigation">
+  <a class="brand-mark" routerLink="/" aria-label="SchoolBridge dashboard">SB</a>
+
+  <nav class="nav-list">
+    <a
+      *ngFor="let item of navItems"
+      class="nav-item"
+      [routerLink]="item.path"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+      [attr.aria-label]="item.label"
+      [attr.title]="item.label"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="getIconPath(item.icon)" />
+      </svg>
+      <span>{{ item.label }}</span>
+    </a>
+  </nav>
+
+  <button class="admin-mini" type="button" aria-label="Admin profile" title="Mr. Asante">
+    <span>MA</span>
+  </button>
+</aside>

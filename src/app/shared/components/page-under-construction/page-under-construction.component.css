@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.maintenance-page {
+  display: grid;
+  min-height: calc(100vh - 78px);
+  padding: 22px;
+  place-items: center;
+}
+
+.maintenance-card {
+  position: relative;
+  width: min(100%, 720px);
+  overflow: hidden;
+  padding: 34px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.28), transparent 18rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0)),
+    #13132a;
+  box-shadow:
+    0 0 42px rgba(139, 92, 246, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 20px 48px rgba(0, 0, 0, 0.28);
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.maintenance-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139, 92, 246, 0.38);
+  box-shadow:
+    0 0 52px rgba(139, 92, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 24px 56px rgba(0, 0, 0, 0.32);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid rgba(139, 92, 246, 0.32);
+  border-radius: 999px;
+  background: rgba(139, 92, 246, 0.12);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.12);
+}
+
+h2 {
+  margin: 18px 0 10px;
+  color: #f8fafc;
+  font-size: clamp(30px, 5vw, 52px);
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+p {
+  max-width: 600px;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.build-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.build-grid div {
+  min-height: 86px;
+  padding: 14px;
+  border: 1px solid rgba(139, 92, 246, 0.14);
+  border-radius: 12px;
+  background: rgba(13, 13, 26, 0.48);
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.build-grid div:hover {
+  transform: translateY(-3px);
+  border-color: rgba(139, 92, 246, 0.34);
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.12);
+}
+
+.build-grid span {
+  display: block;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.build-grid strong {
+  display: block;
+  margin-top: 10px;
+  color: #f8fafc;
+  font-size: 18px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  border: 1px solid rgba(196, 181, 253, 0.24);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  box-shadow: 0 0 22px rgba(139, 92, 246, 0.2);
+  text-decoration: none;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.back-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 32px rgba(139, 92, 246, 0.32);
+}
+
+@media (max-width: 640px) {
+  .maintenance-page {
+    padding: 14px;
+  }
+
+  .maintenance-card {
+    padding: 24px;
+  }
+
+  .build-grid {
+    grid-template-columns: 1fr;
+  }
+}

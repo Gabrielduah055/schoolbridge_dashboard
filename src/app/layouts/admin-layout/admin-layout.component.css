@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at top left, rgba(139, 92, 246, 0.16), transparent 32rem),
+    radial-gradient(circle at 85% 10%, rgba(109, 40, 217, 0.14), transparent 28rem),
+    #0d0d1a;
+  font-family: Inter, "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 206px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.admin-main {
+  min-width: 0;
+}
+
+@media (max-width: 980px) {
+  .admin-layout {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-layout {
+    display: block;
+  }
+}

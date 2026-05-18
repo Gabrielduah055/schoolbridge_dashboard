@@ -1,0 +1,242 @@
+<section class="students-page">
+  <div class="students-main">
+    <div class="page-heading">
+      <div>
+        <h2>Students & Parents</h2>
+        <p>Manage all students and their guardians</p>
+      </div>
+
+      <div class="page-actions">
+        <button class="ghost-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v12M7 8l5-5 5 5M5 21h14a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2" />
+          </svg>
+          Import Excel
+        </button>
+        <button class="primary-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Add Student
+        </button>
+      </div>
+    </div>
+
+    <div class="student-stats">
+      <article *ngFor="let stat of stats" [class]="'stat-card tone-' + stat.tone">
+        <span class="stat-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="getIconPath(stat.icon)" />
+          </svg>
+        </span>
+        <div>
+          <p>{{ stat.label }}</p>
+          <strong>{{ stat.value }}</strong>
+          <span>{{ stat.note }}</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="student-workspace">
+      <section class="card student-table-card">
+        <div class="table-toolbar">
+          <h3>All Students</h3>
+          <label class="inline-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="getIconPath('search')" />
+            </svg>
+            <input type="search" placeholder="Search by name or class..." />
+          </label>
+          <button type="button">Class</button>
+          <button type="button">Status</button>
+        </div>
+
+        <div class="student-table-wrap">
+          <table class="student-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Parent</th>
+                <th>Parent Phone</th>
+                <th>Fee Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let student of students" [class.selected]="student.selected">
+                <td>
+                  <div class="student-cell">
+                    <span [class]="'avatar tone-' + student.tone">{{ student.initials }}</span>
+                    <div>
+                      <strong>{{ student.name }}</strong>
+                      <span>{{ student.admissionNo }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="class-pill">{{ student.className }}</span></td>
+                <td>{{ student.parent }}</td>
+                <td>
+                  <span class="phone-cell">{{ student.phone }} <b>WA</b></span>
+                </td>
+                <td>
+                  <span [class]="'fee-status ' + getFeeStatusClass(student.feeStatus)">
+                    {{ student.feeStatus }}
+                  </span>
+                </td>
+                <td><button class="row-action" type="button">...</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="card selected-card">
+          <div class="selected-header">
+            <span class="avatar large tone-purple">{{ selectedStudent.initials }}</span>
+            <div>
+              <h3>{{ selectedStudent.name }}</h3>
+              <span>{{ selectedStudent.className }}</span>
+            </div>
+          </div>
+
+          <div class="mini-grid">
+            <div>
+              <span>Admission No</span>
+              <strong>{{ selectedStudent.admissionNo }}</strong>
+            </div>
+            <div>
+              <span>Class</span>
+              <strong>{{ selectedStudent.classDetail }}</strong>
+            </div>
+            <div>
+              <span>Date Enrolled</span>
+              <strong>53</strong>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <span>Guardian</span>
+            <strong>{{ selectedStudent.guardian }}</strong>
+          </div>
+
+          <div class="fee-box">
+            <h4>Fee</h4>
+            <div class="fee-metrics">
+              <span>Term fee <strong>{{ selectedStudent.termFee }}</strong></span>
+              <span>Paid <strong>{{ selectedStudent.paid }}</strong></span>
+              <span>Outstanding <strong>{{ selectedStudent.outstanding }}</strong></span>
+            </div>
+            <div class="fee-track">
+              <span [style.width.%]="selectedStudent.progress"></span>
+            </div>
+            <p>{{ selectedStudent.progress }}%</p>
+          </div>
+
+          <div class="selected-actions">
+            <button class="primary-button compact" type="button">Message Parent</button>
+            <button class="amber-button" type="button">Send Fee Reminder</button>
+          </div>
+        </section>
+
+        <section class="card unregistered-card">
+          <h3>
+            <span>!</span>
+            Unregistered Parents
+          </h3>
+
+          <div class="unregistered-list">
+            <article *ngFor="let parent of unregisteredParents">
+              <span [class]="'avatar tone-' + parent.tone">{{ parent.initials }}</span>
+              <div>
+                <strong>{{ parent.name }}</strong>
+                <p>{{ parent.admissionNo }}</p>
+              </div>
+              <button type="button">Remind</button>
+            </article>
+          </div>
+
+          <button class="bulk-button" type="button">Bulk reminder</button>
+        </section>
+      </aside>
+    </div>
+
+    <section class="card class-overview-card">
+      <h3>Class Overview</h3>
+      <div class="class-grid">
+        <article *ngFor="let item of classOverview" [class]="'class-card tone-' + item.tone" [class.active]="item.active">
+          <div class="class-head">
+            <span>{{ item.name }}</span>
+            <div>
+              <strong>{{ item.section }}</strong>
+              <p>{{ item.teacher }}</p>
+            </div>
+          </div>
+          <div class="class-metrics">
+            <span><strong>{{ item.students }}</strong> Students</span>
+            <span><strong>{{ item.attendance }}%</strong> Attendance</span>
+            <span><strong>{{ item.feeCollection }}%</strong> Fee Collection</span>
+          </div>
+          <div class="dual-bars">
+            <span [style.width.%]="item.attendance"></span>
+            <b [style.width.%]="item.feeCollection"></b>
+          </div>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <aside class="student-profile-panel">
+    <button class="close-button" type="button" aria-label="Close student profile">x</button>
+    <div class="profile-top">
+      <span class="profile-avatar">KM</span>
+      <h3>Kofi Mensah</h3>
+      <p>Class 4B</p>
+    </div>
+
+    <div class="profile-grid">
+      <div>
+        <span>Admission No</span>
+        <strong>GHS12003</strong>
+      </div>
+      <div>
+        <span>Class</span>
+        <strong>3A</strong>
+      </div>
+      <div>
+        <span>Date Enrolled</span>
+        <strong>17 Jan 2023</strong>
+      </div>
+      <div>
+        <span>Age</span>
+        <strong>29</strong>
+      </div>
+    </div>
+
+    <div class="profile-fee">
+      <h4>Fee</h4>
+      <div class="fee-metrics">
+        <span>Term fee <strong>GHS 800</strong></span>
+        <span>Outstanding <strong>GHS 400</strong></span>
+      </div>
+      <div class="fee-track">
+        <span style="width: 67%"></span>
+      </div>
+      <p>67%</p>
+    </div>
+
+    <div class="profile-tabs">
+      <button class="active" type="button">Profile</button>
+      <button type="button">Fees</button>
+      <button type="button">Attendance</button>
+      <button type="button">Messages</button>
+    </div>
+
+    <div class="profile-actions">
+      <button class="primary-button" type="button">Message Parent</button>
+      <button class="amber-button" type="button">Send Fee Reminder</button>
+      <button class="outline-button" type="button">View Full History</button>
+    </div>
+  </aside>
+</section>

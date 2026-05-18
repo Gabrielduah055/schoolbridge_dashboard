@@ -1,0 +1,190 @@
+<section class="knowledge-page">
+  <div class="knowledge-main">
+    <div class="brain-alert">
+      <span class="alert-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="getIconPath('bot')" />
+        </svg>
+      </span>
+      <p>Your AI bot is active and trained on <strong>8 documents</strong>. Last updated 2 hours ago.</p>
+      <span class="live-pill">Bot is Live <b></b></span>
+    </div>
+
+    <div class="stat-grid">
+      <article *ngFor="let stat of stats" [class]="'stat-card tone-' + stat.tone">
+        <span class="stat-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="getIconPath(stat.icon)" />
+          </svg>
+        </span>
+        <div>
+          <p>{{ stat.kicker }} - {{ stat.label }}</p>
+          <strong>{{ stat.value }}</strong>
+          <span>{{ stat.note }}</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="workspace-grid">
+      <section class="card library-card">
+        <div class="section-heading">
+          <div>
+            <h2>Document Library</h2>
+            <p>Uploaded Documents</p>
+          </div>
+          <button class="text-action" type="button">Upload New +</button>
+        </div>
+
+        <div class="document-grid">
+          <article *ngFor="let document of documents" [class]="'document-card tone-' + document.tone" [class.empty]="document.empty">
+            <div class="document-head">
+              <span class="document-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path [attr.d]="getIconPath(document.icon)" />
+                </svg>
+              </span>
+              <div>
+                <h3>{{ document.title }}</h3>
+                <p>{{ document.subtitle }}</p>
+              </div>
+            </div>
+
+            <ng-container *ngIf="!document.empty; else emptyDocument">
+              <div class="file-row">
+                <span [class]="'file-chip file-' + document.fileType">{{ document.fileType }}</span>
+                <div>
+                  <strong>{{ document.fileName }}</strong>
+                  <p>size/date/2026</p>
+                </div>
+                <span class="status-pill">{{ document.status }}</span>
+                <button class="icon-button" type="button" [attr.aria-label]="'More actions for ' + document.title">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path [attr.d]="getIconPath('more')" />
+                  </svg>
+                </button>
+              </div>
+
+              <p *ngIf="document.warning" class="warning-note">{{ document.warning }}</p>
+              <div class="document-action">{{ document.action }}</div>
+              <span class="trained-note">{{ document.note }} <b>OK</b></span>
+            </ng-container>
+
+            <ng-template #emptyDocument>
+              <div class="empty-drop">
+                <strong>NO FILE UPLOADED YET</strong>
+                <span>No exam timetable uploaded yet</span>
+                <button type="button">{{ document.action }}</button>
+              </div>
+              <p class="missing-note">{{ document.note }} !</p>
+            </ng-template>
+          </article>
+        </div>
+      </section>
+
+      <aside class="right-stack">
+        <section class="training-card">
+          <h2>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path [attr.d]="getIconPath('bot')" />
+            </svg>
+            Bot Training Status
+          </h2>
+          <div class="status-orb">
+            <span></span>
+            <strong>Status</strong>
+          </div>
+          <p>Training Log</p>
+          <div class="training-list">
+            <div *ngFor="let item of trainingLog" [class]="'training-row tone-' + item.tone">
+              <span></span>
+              <strong>{{ item.label }}</strong>
+              <b>{{ item.complete ? 'OK' : 'x' }}</b>
+            </div>
+          </div>
+          <div class="training-progress">
+            <div>
+              <span>5 of 8 recommended documents uploaded</span>
+              <strong>63%</strong>
+            </div>
+            <i></i>
+          </div>
+        </section>
+
+        <section class="card questions-card">
+          <h2>Top Parent Questions</h2>
+          <div class="question-table">
+            <div class="question-head">
+              <span>Question text</span>
+              <span>Asked</span>
+              <span>Bot answered?</span>
+            </div>
+            <div *ngFor="let question of questions" class="question-row">
+              <strong>{{ question.text }}</strong>
+              <span>{{ question.asked }}</span>
+              <b>{{ question.answered ? 'OK' : 'x' }}</b>
+              <small *ngIf="question.note">{{ question.note }}</small>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <section class="card performance-card">
+      <div class="section-heading">
+        <div>
+          <h2>Bot Performance</h2>
+        </div>
+        <button class="period-button" type="button">This Term</button>
+      </div>
+      <div class="performance-grid">
+        <article *ngFor="let item of performance" [class]="'metric-card tone-' + item.tone">
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <p>{{ item.detail }}</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <aside class="control-panel">
+    <section class="upload-card">
+      <h2>Upload Document</h2>
+      <div class="drop-zone">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="getIconPath('upload')" />
+        </svg>
+        <strong>Bold / document</strong>
+        <span>Background on hover</span>
+      </div>
+      <div class="upload-options">
+        <button type="button">Text or / text input...</button>
+        <span class="toggle"></span>
+      </div>
+      <button class="upload-button" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path [attr.d]="getIconPath('upload')" />
+        </svg>
+        Upload & Train Bot
+      </button>
+    </section>
+
+    <section class="bot-test-card">
+      <h2>Test Your Bot</h2>
+      <p>Role: <strong>Parent</strong> | Teacher | Admin</p>
+      <div class="chat-thread">
+        <article *ngFor="let message of chat" [class.you]="message.sender === 'You'">
+          <span *ngIf="message.sender === 'Bot'">Bot</span>
+          <p>{{ message.text }}</p>
+        </article>
+      </div>
+      <label class="message-box">
+        <input type="text" placeholder="Message" />
+        <button type="button" aria-label="Send message">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="getIconPath('send')" />
+          </svg>
+        </button>
+      </label>
+    </section>
+  </aside>
+</section>

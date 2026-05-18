@@ -1,0 +1,26 @@
+<header class="topbar">
+  <div>
+    <h1>{{ pageTitle }}</h1>
+    <p>{{ pageSubtitle }}</p>
+  </div>
+
+  <label class="search-box">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path [attr.d]="getIconPath('search')" />
+    </svg>
+    <input type="search" placeholder="Search anything..." />
+  </label>
+
+  <div class="topbar-actions">
+    <button class="notification-button" type="button" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path [attr.d]="getIconPath('bell')" />
+      </svg>
+      <span>5</span>
+    </button>
+    <div class="school-name">{{ schoolName }}</div>
+    <button class="admin-avatar" type="button" aria-label="Admin menu">
+      <span>MA</span>
+    </button>
+  </div>
+</header>
