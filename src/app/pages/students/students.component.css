@@ -8,8 +8,14 @@
 }
 
 button,
-input {
+input,
+a {
   font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 svg {
@@ -116,6 +122,35 @@ svg {
 .bulk-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 28px rgba(139, 92, 246, 0.22);
+}
+
+button:disabled,
+.primary-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.62;
+  transform: none;
+}
+
+.action-status,
+.empty-copy,
+.table-empty {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.action-status {
+  margin: -4px 0 12px;
+  color: #c4b5fd;
+}
+
+.table-empty {
+  display: grid;
+  min-height: 120px;
+  place-items: center;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.26);
 }
 
 .compact {
@@ -896,4 +931,3 @@ svg {
 
 /* Make table rows feel clickable */
 .student-table tbody tr { cursor: pointer; }
-

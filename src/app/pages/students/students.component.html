@@ -7,20 +7,29 @@
       </div>
 
       <div class="page-actions">
-        <button class="ghost-button" type="button">
+        <input
+          #studentImport
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          hidden
+          (change)="importStudents($event)"
+        />
+        <button class="ghost-button" type="button" [disabled]="importing" (click)="studentImport.click()">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3v12M7 8l5-5 5 5M5 21h14a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2" />
           </svg>
-          Import Excel
+          {{ importing ? 'Importing...' : 'Import Excel' }}
         </button>
-        <button class="primary-button" type="button">
+        <a class="primary-button" [routerLink]="['/students']">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 5v14M5 12h14" />
           </svg>
           Add Student
-        </button>
+        </a>
       </div>
     </div>
+
+    <p *ngIf="actionMessage" class="action-status">{{ actionMessage }}</p>
 
     <div class="student-stats">
       <article *ngFor="let stat of stats" [class]="'stat-card tone-' + stat.tone">
@@ -45,7 +54,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path [attr.d]="getIconPath('search')" />
             </svg>
-            <input type="search" placeholder="Search by name or class..." />
+            <input type="search" placeholder="Search by name or class..." [(ngModel)]="searchTerm" />
           </label>
           <button type="button">Class</button>
           <button type="button">Status</button>
@@ -63,6 +72,12 @@
 
         <!-- Student table -->
         <div class="student-table-wrap" *ngIf="!loading && !error">
+          <div *ngIf="students.length === 0" class="table-empty">
+            <p>No students found in the backend yet.</p>
+          </div>
+          <div *ngIf="students.length > 0 && filteredStudents.length === 0" class="table-empty">
+            <p>No students match your search.</p>
+          </div>
           <table class="student-table">
             <thead>
               <tr>
@@ -76,9 +91,9 @@
             </thead>
             <tbody>
               <tr
-                *ngFor="let student of students; let i = index"
+                *ngFor="let student of filteredStudents"
                 [class.selected]="selectedStudent?.name === student.name"
-                (click)="selectStudent(student, rawStudents[i])"
+                (click)="selectStudent(student, rawStudents[student.rawIndex])"
                 style="cursor: pointer"
               >
                 <td>
@@ -124,6 +139,7 @@
               </div>
               <button type="button">Remind</button>
             </article>
+            <p *ngIf="unregisteredParents.length === 0" class="empty-copy">All listed students have parent contact details.</p>
           </div>
 
           <button class="bulk-button" type="button">Bulk reminder</button>
@@ -133,6 +149,7 @@
 
     <section class="card class-overview-card">
       <h3>Class Overview</h3>
+      <p *ngIf="classOverview.length === 0" class="empty-copy">Class summaries will appear when students are added.</p>
       <div class="class-grid">
         <article *ngFor="let item of classOverview" [class]="'class-card tone-' + item.tone" [class.active]="item.active">
           <div class="class-head">

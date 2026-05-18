@@ -116,6 +116,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly actions: Action[] = [
     { label: 'Send Announcement', icon: 'megaphone', tone: 'purple', route: '/announcements' },
     { label: 'Add Student',       icon: 'userPlus',  tone: 'blue',   route: '/students'      },
+    { label: 'Upload Knowledge',  icon: 'upload',    tone: 'emerald',route: '/knowledge-base'},
     { label: 'Send Email',        icon: 'mail',      tone: 'emerald',route: '/email-center'  },
     { label: 'Check Fees',        icon: 'wallet',    tone: 'amber',  route: '/fee-management'},
     { label: 'Mark Attendance',   icon: 'check',     tone: 'pink',   route: '/attendance'    },
@@ -216,9 +217,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
           ? `${formatGHS(totalPaid)} collected`
           : 'No fee data yet';
 
-        // Messages Today — use conversations count if we ever expose that endpoint
+        // Messages Today - the deployed backend does not expose conversations yet.
         this.stats[3].value  = 0;
-        this.stats[3].change = 'No data yet';
+        this.stats[3].change = 'No message data yet';
 
         this.studentsLoading = false;
         this.startAnimation();
