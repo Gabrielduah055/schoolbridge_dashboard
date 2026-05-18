@@ -620,10 +620,26 @@ svg {
   color: #fff;
   border-radius: 10px;
   background:
-    linear-gradient(90deg, #8b5cf6 0 67%, rgba(71, 85, 105, 0.32) 67% 100%),
+    linear-gradient(90deg, #8b5cf6 0 var(--fee-pct, 67%), rgba(71, 85, 105, 0.32) var(--fee-pct, 67%) 100%),
     #0d0d1a;
   box-shadow: inset 0 0 18px rgba(139, 92, 246, 0.16);
 }
+
+/* Fee state helpers */
+.fee-loading,
+.fee-error,
+.fee-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.fee-error { color: #f87171; }
+
 
 .fee-bar span {
   font-size: 28px;

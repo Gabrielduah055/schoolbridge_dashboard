@@ -2,7 +2,7 @@
   <div class="students-main">
     <div class="page-heading">
       <div>
-        <h2>Students & Parents</h2>
+        <h2>Students &amp; Parents</h2>
         <p>Manage all students and their guardians</p>
       </div>
 
@@ -51,7 +51,18 @@
           <button type="button">Status</button>
         </div>
 
-        <div class="student-table-wrap">
+        <!-- Loading state -->
+        <div *ngIf="loading" class="table-loading">
+          <p>Loading students…</p>
+        </div>
+
+        <!-- Error state -->
+        <div *ngIf="!loading && error" class="table-error">
+          <p>{{ error }}</p>
+        </div>
+
+        <!-- Student table -->
+        <div class="student-table-wrap" *ngIf="!loading && !error">
           <table class="student-table">
             <thead>
               <tr>
@@ -64,7 +75,12 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let student of students" [class.selected]="student.selected">
+              <tr
+                *ngFor="let student of students; let i = index"
+                [class.selected]="selectedStudent?.name === student.name"
+                (click)="selectStudent(student, rawStudents[i])"
+                style="cursor: pointer"
+              >
                 <td>
                   <div class="student-cell">
                     <span [class]="'avatar tone-' + student.tone">{{ student.initials }}</span>
@@ -84,62 +100,15 @@
                     {{ student.feeStatus }}
                   </span>
                 </td>
-                <td><button class="row-action" type="button">...</button></td>
+                <td><button class="row-action" type="button" (click)="$event.stopPropagation()">...</button></td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
+      <!-- Unregistered parents sidebar (always visible) -->
       <aside class="side-stack">
-        <section class="card selected-card">
-          <div class="selected-header">
-            <span class="avatar large tone-purple">{{ selectedStudent.initials }}</span>
-            <div>
-              <h3>{{ selectedStudent.name }}</h3>
-              <span>{{ selectedStudent.className }}</span>
-            </div>
-          </div>
-
-          <div class="mini-grid">
-            <div>
-              <span>Admission No</span>
-              <strong>{{ selectedStudent.admissionNo }}</strong>
-            </div>
-            <div>
-              <span>Class</span>
-              <strong>{{ selectedStudent.classDetail }}</strong>
-            </div>
-            <div>
-              <span>Date Enrolled</span>
-              <strong>53</strong>
-            </div>
-          </div>
-
-          <div class="detail-block">
-            <span>Guardian</span>
-            <strong>{{ selectedStudent.guardian }}</strong>
-          </div>
-
-          <div class="fee-box">
-            <h4>Fee</h4>
-            <div class="fee-metrics">
-              <span>Term fee <strong>{{ selectedStudent.termFee }}</strong></span>
-              <span>Paid <strong>{{ selectedStudent.paid }}</strong></span>
-              <span>Outstanding <strong>{{ selectedStudent.outstanding }}</strong></span>
-            </div>
-            <div class="fee-track">
-              <span [style.width.%]="selectedStudent.progress"></span>
-            </div>
-            <p>{{ selectedStudent.progress }}%</p>
-          </div>
-
-          <div class="selected-actions">
-            <button class="primary-button compact" type="button">Message Parent</button>
-            <button class="amber-button" type="button">Send Fee Reminder</button>
-          </div>
-        </section>
-
         <section class="card unregistered-card">
           <h3>
             <span>!</span>
@@ -187,56 +156,76 @@
     </section>
   </div>
 
-  <aside class="student-profile-panel">
-    <button class="close-button" type="button" aria-label="Close student profile">x</button>
-    <div class="profile-top">
-      <span class="profile-avatar">KM</span>
-      <h3>Kofi Mensah</h3>
-      <p>Class 4B</p>
-    </div>
+  <!-- ── Student Profile Panel ── always in DOM, slides in when a student is selected ── -->
+  <aside
+    class="student-profile-panel"
+    [class.panel-visible]="selectedStudent"
+    style="background:
+      radial-gradient(circle at 58% 4%, rgba(139,92,246,0.44), transparent 6rem),
+      radial-gradient(circle at 76% 86%, rgba(139,92,246,0.22), transparent 8rem),
+      #13132a;
+      border: 1px solid rgba(139,92,246,0.18);
+      border-radius: 10px;
+      padding: 14px;"
+  >
+    <ng-container *ngIf="selectedStudent">
+      <button
+        class="close-button"
+        type="button"
+        aria-label="Close student profile"
+        (click)="closeStudentPanel()"
+      >✕</button>
 
-    <div class="profile-grid">
-      <div>
-        <span>Admission No</span>
-        <strong>GHS12003</strong>
+      <div class="profile-top">
+        <span class="profile-avatar">{{ selectedStudent.initials }}</span>
+        <h3>{{ selectedStudent.name }}</h3>
+        <p>{{ selectedStudent.className }}</p>
       </div>
-      <div>
-        <span>Class</span>
-        <strong>3A</strong>
-      </div>
-      <div>
-        <span>Date Enrolled</span>
-        <strong>17 Jan 2023</strong>
-      </div>
-      <div>
-        <span>Age</span>
-        <strong>29</strong>
-      </div>
-    </div>
 
-    <div class="profile-fee">
-      <h4>Fee</h4>
-      <div class="fee-metrics">
-        <span>Term fee <strong>GHS 800</strong></span>
-        <span>Outstanding <strong>GHS 400</strong></span>
+      <div class="profile-grid">
+        <div>
+          <span>Admission No</span>
+          <strong>{{ selectedStudent.admissionNo }}</strong>
+        </div>
+        <div>
+          <span>Class</span>
+          <strong>{{ selectedStudent.classDetail }}</strong>
+        </div>
+        <div>
+          <span>Date Enrolled</span>
+          <strong>{{ selectedStudent.enrolled }}</strong>
+        </div>
+        <div>
+          <span>Age</span>
+          <strong>{{ selectedStudent.age }}</strong>
+        </div>
       </div>
-      <div class="fee-track">
-        <span style="width: 67%"></span>
+
+      <div class="profile-fee">
+        <h4>Fee</h4>
+        <div class="fee-metrics">
+          <span>Term fee <strong>{{ selectedStudent.termFee }}</strong></span>
+          <span>Outstanding <strong>{{ selectedStudent.outstanding }}</strong></span>
+        </div>
+        <div class="fee-track">
+          <span [style.width.%]="selectedStudent.progress"></span>
+        </div>
+        <p>{{ selectedStudent.progress }}%</p>
       </div>
-      <p>67%</p>
-    </div>
 
-    <div class="profile-tabs">
-      <button class="active" type="button">Profile</button>
-      <button type="button">Fees</button>
-      <button type="button">Attendance</button>
-      <button type="button">Messages</button>
-    </div>
+      <div class="profile-tabs">
+        <button class="active" type="button">Profile</button>
+        <button type="button">Fees</button>
+        <button type="button">Attendance</button>
+        <button type="button">Messages</button>
+      </div>
 
-    <div class="profile-actions">
-      <button class="primary-button" type="button">Message Parent</button>
-      <button class="amber-button" type="button">Send Fee Reminder</button>
-      <button class="outline-button" type="button">View Full History</button>
-    </div>
+      <div class="profile-actions">
+        <button class="primary-button" type="button">Message Parent</button>
+        <button class="amber-button" type="button">Send Fee Reminder</button>
+        <button class="outline-button" type="button">View Full History</button>
+      </div>
+    </ng-container>
   </aside>
+
 </section>
