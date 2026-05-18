@@ -23,15 +23,18 @@ svg {
 }
 
 .students-page {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 256px;
-  gap: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
   min-height: calc(100vh - 78px);
   padding: 14px 18px 22px;
 }
 
 .students-main {
+  flex: 1 1 auto;
   min-width: 0;
+  /* Smoothly shrink as panel opens */
+  transition: all 380ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-heading {
@@ -679,25 +682,64 @@ svg {
 }
 
 .student-profile-panel {
+  /* Always in DOM — width 0 when closed so main content fills full width */
+  flex: 0 0 auto;
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Smooth slide + fade */
+  transition:
+    width    380ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity  280ms cubic-bezier(0.4, 0, 0.2, 1),
+    margin   380ms cubic-bezier(0.4, 0, 0.2, 1);
   position: sticky;
   top: 92px;
-  min-width: 0;
-  overflow: hidden;
-  padding: 14px;
-  background:
-    radial-gradient(circle at 58% 4%, rgba(139, 92, 246, 0.44), transparent 6rem),
-    radial-gradient(circle at 76% 86%, rgba(139, 92, 246, 0.22), transparent 8rem),
-    #13132a;
+  max-height: calc(100vh - 106px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.student-profile-panel::-webkit-scrollbar {
+  display: none;
+}
+
+/* Panel open state — triggered by Angular [class.panel-visible] */
+.student-profile-panel.panel-visible {
+  width: 320px;
+  opacity: 1;
+  pointer-events: auto;
+  margin-left: 16px;
+  overflow: visible;
+  overflow-y: auto;
+}
+
+.student-profile-panel > * {
+  /* Prevent content from affecting layout during width animation */
+  min-width: 320px;
 }
 
 .close-button {
   position: absolute;
   top: 14px;
   right: 14px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   color: #94a3b8;
   cursor: pointer;
-  border: 0;
-  background: transparent;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 999px;
+  background: rgba(13, 13, 26, 0.6);
+  font-size: 14px;
+  transition: color 200ms ease, border-color 200ms ease, background 200ms ease;
+}
+
+.close-button:hover {
+  color: #f8fafc;
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.2);
 }
 
 .profile-top {
@@ -776,13 +818,13 @@ svg {
 }
 
 @media (max-width: 1320px) {
-  .students-page {
-    grid-template-columns: 1fr;
+  /* Panel stays inline but at a smaller width */
+  .student-profile-panel.panel-visible {
+    width: 280px;
   }
 
-  .student-profile-panel {
-    position: relative;
-    top: auto;
+  .student-profile-panel > * {
+    min-width: 280px;
   }
 }
 
@@ -794,6 +836,24 @@ svg {
 
   .student-workspace {
     grid-template-columns: 1fr;
+  }
+
+  /* Stack the panel below main content on narrower viewports */
+  .students-page {
+    flex-direction: column;
+  }
+
+  .student-profile-panel.panel-visible {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 16px;
+    position: relative;
+    top: auto;
+    max-height: none;
+  }
+
+  .student-profile-panel > * {
+    min-width: 0;
   }
 }
 
@@ -820,3 +880,20 @@ svg {
     grid-template-columns: 1fr;
   }
 }
+
+/* Table state helpers */
+.table-loading,
+.table-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.table-error { color: #f87171; }
+
+/* Make table rows feel clickable */
+.student-table tbody tr { cursor: pointer; }
+

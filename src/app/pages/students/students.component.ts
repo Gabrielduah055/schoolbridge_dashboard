@@ -64,6 +64,7 @@ export class StudentsComponent implements OnInit {
   ];
 
   students: StudentRow[] = [];
+  rawStudents: any[] = [];
 
   readonly classOverview: ClassOverview[] = [
     { name: '1A', section: '1A', teacher: 'Teacher Name', students: 45, attendance: 75, feeCollection: 30, tone: 'pink' },
@@ -86,6 +87,7 @@ export class StudentsComponent implements OnInit {
     this.api.getStudents().subscribe({
       next: (data: any) => {
         const list: any[] = Array.isArray(data) ? data : [];
+        this.rawStudents = list;
 
         // Map backend student objects → StudentRow
         this.students = list.map((s, i) => ({
@@ -112,21 +114,8 @@ export class StudentsComponent implements OnInit {
         ];
 
         if (this.students.length > 0) {
-          const s = list[0];
-          this.selectedStudent = {
-            initials: this.students[0].initials,
-            name: s.name,
-            className: s.class,
-            admissionNo: s.admissionNumber,
-            classDetail: s.class,
-            enrolled: s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
-            age: s.age ?? '—',
-            guardian: s.parentName ?? '—',
-            termFee: '—',
-            paid: '—',
-            outstanding: '—',
-            progress: 0
-          };
+          // Panel starts closed — user clicks a row to open it
+          this.selectedStudent = null;
         }
 
         this.loading = false;
@@ -137,6 +126,30 @@ export class StudentsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  closeStudentPanel(): void {
+    this.selectedStudent = null;
+  }
+
+  selectStudent(row: StudentRow, raw: any): void {
+    this.selectedStudent = {
+      initials: row.initials,
+      name: row.name,
+      className: row.className,
+      admissionNo: row.admissionNo,
+      classDetail: row.className,
+      enrolled: raw.createdAt
+        ? new Date(raw.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : '—',
+      age: raw.age ?? '—',
+      guardian: raw.parentName ?? '—',
+      phone: raw.parentPhone ?? '—',
+      termFee: '—',
+      paid: '—',
+      outstanding: '—',
+      progress: 0
+    };
   }
 
   private mapFeeStatus(status: string): 'Paid' | 'Partial' | 'Unpaid' {
