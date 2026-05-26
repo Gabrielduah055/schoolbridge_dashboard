@@ -173,12 +173,18 @@
           <path [attr.d]="getIconPath('upload')" />
         </svg>
         <strong>{{ selectedFile?.name || 'Choose a document' }}</strong>
-        <span>{{ selectedFile ? 'Ready to train' : 'PDF, spreadsheet, text, or document' }}</span>
+        <span>{{ selectedFile ? categoryLabel(selectedCategory) + ' ready to train' : 'PDF, spreadsheet, text, or document' }}</span>
       </button>
       <div class="upload-options">
         <button type="button" (click)="knowledgeFile.click()">Browse files</button>
         <span class="toggle"></span>
       </div>
+      <label class="field-control">
+        <span>Document type</span>
+        <select name="selectedCategory" [(ngModel)]="selectedCategory">
+          <option *ngFor="let option of categoryOptions" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
       <p *ngIf="uploadMessage" class="upload-message">{{ uploadMessage }}</p>
       <button class="upload-button" type="button" [disabled]="uploading || !selectedFile" (click)="uploadKnowledge()">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -189,12 +195,40 @@
     </section>
 
     <section class="bot-test-card">
-      <h2>Test Your Bot</h2>
-      <p>Role: <strong>Parent</strong> | Teacher | Admin</p>
+      <div class="bot-test-head">
+        <h2>Test Your Bot</h2>
+        <button type="button" (click)="clearTestChat()">Clear</button>
+      </div>
+      <div class="bot-controls">
+        <div class="role-tabs" aria-label="Bot test role">
+          <button
+            *ngFor="let role of roleOptions"
+            type="button"
+            [class.active]="selectedRole === role.value"
+            (click)="selectedRole = role.value"
+          >
+            {{ role.label }}
+          </button>
+        </div>
+        <label class="field-control compact-field">
+          <span>Model</span>
+          <select name="selectedModelKey" [(ngModel)]="selectedModelKey">
+            <option *ngFor="let option of modelOptions" [value]="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+      </div>
       <div class="chat-thread">
         <article *ngFor="let message of chat" [class.you]="message.sender === 'You'">
           <span *ngIf="message.sender === 'Bot'">Bot</span>
-          <p>{{ message.text }}</p>
+          <p [class.thinking]="message.thinking" [class.typing]="message.typing">
+            <ng-container *ngIf="message.thinking; else replyText">
+              <em>Thinking</em>
+              <i></i><i></i><i></i>
+            </ng-container>
+            <ng-template #replyText>
+              {{ message.text }}<b *ngIf="message.typing"></b>
+            </ng-template>
+          </p>
         </article>
       </div>
       <form class="message-box" (ngSubmit)="sendTestMessage()">
