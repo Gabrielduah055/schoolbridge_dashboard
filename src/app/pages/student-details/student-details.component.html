@@ -1,0 +1,124 @@
+<section class="student-details-page">
+  <div class="page-heading">
+    <div>
+      <a class="back-link" [routerLink]="['/students']">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Students
+      </a>
+      <h2>Student Details</h2>
+      <p>Full profile, guardian, class, fee, and backend record details.</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="state-card">
+    <p>Loading student details...</p>
+  </div>
+
+  <div *ngIf="!loading && error" class="state-card error-card">
+    <p>{{ error }}</p>
+    <a class="outline-button" [routerLink]="['/students']">Back to students</a>
+  </div>
+
+  <ng-container *ngIf="!loading && !error && student">
+    <section class="profile-hero">
+      <span class="profile-avatar">{{ student.initials }}</span>
+      <div>
+        <p class="eyebrow">{{ student.admissionNo }}</p>
+        <h1>{{ student.name }}</h1>
+        <div class="hero-meta">
+          <span>{{ student.className }}</span>
+          <span [class]="'fee-status ' + getFeeStatusClass(student.feeStatus)">{{ student.feeStatus }}</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="details-stats">
+      <article *ngFor="let stat of stats" [class]="'stat-card tone-' + stat.tone">
+        <span class="stat-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="getIconPath(stat.icon)" />
+          </svg>
+        </span>
+        <div>
+          <p>{{ stat.label }}</p>
+          <strong>{{ stat.value }}</strong>
+          <span>{{ stat.note }}</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="details-grid">
+      <section class="card">
+        <h3>Student Profile</h3>
+        <div class="info-grid">
+          <div>
+            <span>Admission No</span>
+            <strong>{{ student.admissionNo }}</strong>
+          </div>
+          <div>
+            <span>Class</span>
+            <strong>{{ student.className }}</strong>
+          </div>
+          <div>
+            <span>Age</span>
+            <strong>{{ student.age }}</strong>
+          </div>
+          <div>
+            <span>Date Enrolled</span>
+            <strong>{{ student.enrolled }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Guardian Details</h3>
+        <div class="info-grid">
+          <div>
+            <span>Guardian</span>
+            <strong>{{ student.guardian }}</strong>
+          </div>
+          <div>
+            <span>Phone</span>
+            <strong>{{ student.phone }}</strong>
+          </div>
+          <div>
+            <span>Email</span>
+            <strong>{{ student.email }}</strong>
+          </div>
+          <div>
+            <span>Address</span>
+            <strong>{{ student.address }}</strong>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card fee-card">
+      <div>
+        <h3>Fee Details</h3>
+        <p>{{ student.progress }}% collected for this term.</p>
+      </div>
+      <div class="fee-metrics">
+        <span>Term fee <strong>{{ student.termFee }}</strong></span>
+        <span>Paid <strong>{{ student.paid }}</strong></span>
+        <span>Outstanding <strong>{{ student.outstanding }}</strong></span>
+      </div>
+      <div class="fee-track">
+        <span [style.width.%]="student.progress"></span>
+      </div>
+    </section>
+
+    <section class="card record-card">
+      <h3>All Student Details</h3>
+      <p *ngIf="rawRows.length === 0" class="empty-copy">No additional backend fields were returned for this student.</p>
+      <div class="record-grid">
+        <div *ngFor="let row of rawRows">
+          <span>{{ row.label }}</span>
+          <strong>{{ row.value }}</strong>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</section>

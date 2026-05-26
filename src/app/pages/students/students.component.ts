@@ -23,11 +23,12 @@ interface StudentRow {
   feeStatus: 'Paid' | 'Partial' | 'Unpaid';
   tone: string;
   rawIndex: number;
+  routeId: string;
 }
 
 interface ClassOverview {
   name: string;
-  section: string;
+  label: string;
   teacher: string;
   students: number;
   attendance: number;
@@ -36,34 +37,7 @@ interface ClassOverview {
   active?: boolean;
 }
 
-interface UnregisteredParent {
-  initials: string;
-  name: string;
-  admissionNo: string;
-  tone: string;
-}
-
-interface SelectedStudent {
-  initials: string;
-  name: string;
-  className: string;
-  admissionNo: string;
-  classDetail: string;
-  enrolled: string;
-  age: string;
-  guardian: string;
-  phone: string;
-  termFee: string;
-  paid: string;
-  outstanding: string;
-  progress: number;
-}
-
 const tones = ['purple', 'blue', 'pink', 'emerald', 'amber', 'red'];
-
-function formatGHS(amount: number): string {
-  return `GHS ${amount.toLocaleString('en-GH', { maximumFractionDigits: 0 })}`;
-}
 
 function percent(numerator: number, denominator: number): number {
   if (!denominator) return 0;
@@ -85,6 +59,8 @@ export class StudentsComponent implements OnInit {
   error = '';
   actionMessage = '';
   searchTerm = '';
+  classFilter = '';
+  statusFilter = '';
 
   stats: StudentStat[] = [
     { label: 'Total Students', value: '-', note: 'Loading...', icon: 'students', tone: 'purple' },
@@ -94,10 +70,7 @@ export class StudentsComponent implements OnInit {
   ];
 
   students: StudentRow[] = [];
-  rawStudents: ApiStudent[] = [];
   classOverview: ClassOverview[] = [];
-  unregisteredParents: UnregisteredParent[] = [];
-  selectedStudent: SelectedStudent | null = null;
 
   constructor(private api: ApiService) {}
 
@@ -107,12 +80,19 @@ export class StudentsComponent implements OnInit {
 
   get filteredStudents(): StudentRow[] {
     const query = this.searchTerm.trim().toLowerCase();
-    if (!query) return this.students;
 
     return this.students.filter((student) =>
-      [student.name, student.admissionNo, student.className, student.parent, student.phone]
-        .some((value) => value.toLowerCase().includes(query))
+      (!query || [student.name, student.admissionNo, student.parent, student.phone]
+        .some((value) => value.toLowerCase().includes(query))) &&
+      (!this.classFilter || student.className === this.classFilter) &&
+      (!this.statusFilter || student.feeStatus === this.statusFilter)
     );
+  }
+
+  get classOptions(): string[] {
+    return Array.from(new Set(this.students.map((student) => student.className)))
+      .filter((className) => className !== '-')
+      .sort((a, b) => a.localeCompare(b));
   }
 
   importStudents(event: Event): void {
@@ -141,34 +121,6 @@ export class StudentsComponent implements OnInit {
     });
   }
 
-  closeStudentPanel(): void {
-    this.selectedStudent = null;
-  }
-
-  selectStudent(row: StudentRow, raw: ApiStudent): void {
-    const termFee = this.getNumber(raw, ['termFee', 'fee.termFee', 'fees.termFee']);
-    const paid = this.getNumber(raw, ['amountPaid', 'paid', 'fee.amountPaid', 'fees.amountPaid']);
-    const outstanding = termFee > 0
-      ? Math.max(0, termFee - paid)
-      : this.getNumber(raw, ['outstanding', 'balance', 'fee.outstanding', 'fees.outstanding']);
-
-    this.selectedStudent = {
-      initials: row.initials,
-      name: row.name,
-      className: row.className,
-      admissionNo: row.admissionNo,
-      classDetail: row.className,
-      enrolled: this.formatDate(this.getText(raw, ['createdAt', 'enrolledAt', 'dateEnrolled'])),
-      age: this.getText(raw, ['age']) || '-',
-      guardian: row.parent,
-      phone: row.phone,
-      termFee: termFee > 0 ? formatGHS(termFee) : '-',
-      paid: paid > 0 ? formatGHS(paid) : '-',
-      outstanding: outstanding > 0 ? formatGHS(outstanding) : 'GHS 0',
-      progress: percent(paid, termFee)
-    };
-  }
-
   getFeeStatusClass(status: StudentRow['feeStatus']): string {
     return `status-${status.toLowerCase()}`;
   }
@@ -179,12 +131,9 @@ export class StudentsComponent implements OnInit {
 
     this.api.getStudents().subscribe({
       next: (list) => {
-        this.rawStudents = list;
         this.students = list.map((student, index) => this.toStudentRow(student, index));
         this.classOverview = this.buildClassOverview(list);
-        this.unregisteredParents = this.buildUnregisteredParents(list);
         this.updateStats(list);
-        this.selectedStudent = null;
         this.loading = false;
       },
       error: (err) => {
@@ -209,7 +158,8 @@ export class StudentsComponent implements OnInit {
       phone,
       feeStatus: this.mapFeeStatus(student),
       tone: tones[index % tones.length],
-      rawIndex: index
+      rawIndex: index,
+      routeId: this.studentRouteId(student, index)
     };
   }
 
@@ -223,7 +173,7 @@ export class StudentsComponent implements OnInit {
 
     this.stats = [
       { label: 'Total Students', value: String(total), note: total === 1 ? '1 enrolled' : `${total} enrolled`, icon: 'students', tone: 'purple' },
-      { label: 'Total Parents Registered', value: String(withParent), note: `${Math.max(0, total - withParent)} unregistered`, icon: 'teachers', tone: 'blue' },
+      { label: 'Total Parents Registered', value: String(withParent), note: 'With contact details', icon: 'teachers', tone: 'blue' },
       { label: 'Students With Fee Issues', value: String(feeIssues), note: 'Outstanding this term', icon: 'wallet', tone: 'amber' },
       { label: 'New This Term', value: String(newThisTerm), note: 'From backend enrollment dates', icon: 'events', tone: 'emerald' }
     ];
@@ -260,7 +210,7 @@ export class StudentsComponent implements OnInit {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([className, data], index) => ({
         name: className,
-        section: className,
+        label: this.classLabel(className),
         teacher: data.teacher,
         students: data.students,
         attendance: data.attendanceCount ? Math.round(data.attendanceTotal / data.attendanceCount) : 0,
@@ -268,21 +218,6 @@ export class StudentsComponent implements OnInit {
         tone: tones[index % tones.length],
         active: index === 0
       }));
-  }
-
-  private buildUnregisteredParents(list: ApiStudent[]): UnregisteredParent[] {
-    return list
-      .filter((student) => !this.getText(student, ['parentPhone', 'guardianPhone', 'phone', 'parent.phone', 'guardian.phone']))
-      .slice(0, 5)
-      .map((student, index) => {
-        const name = this.studentName(student);
-        return {
-          initials: this.initials(name),
-          name,
-          admissionNo: this.getText(student, ['admissionNumber', 'admissionNo', 'studentId', 'id', '_id']) || '-',
-          tone: tones[index % tones.length]
-        };
-      });
   }
 
   private mapFeeStatus(student: ApiStudent): 'Paid' | 'Partial' | 'Unpaid' {
@@ -312,6 +247,22 @@ export class StudentsComponent implements OnInit {
 
   private className(student: ApiStudent): string {
     return this.getText(student, ['class', 'className', 'grade', 'section', 'currentClass']) || '-';
+  }
+
+  private studentRouteId(student: ApiStudent, index: number): string {
+    return this.getText(student, ['_id', 'id', 'studentId', 'admissionNumber', 'admissionNo']) || String(index);
+  }
+
+  private classLabel(className: string): string {
+    const numberMatch = className.match(/\d+[A-Za-z]?/);
+    if (numberMatch) return numberMatch[0].toUpperCase();
+
+    const words = className.split(/\s+/).filter(Boolean);
+    return words
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || '?';
   }
 
   private initials(name: string): string {
