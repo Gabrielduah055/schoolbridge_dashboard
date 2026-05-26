@@ -44,9 +44,16 @@ export class ApiService {
   }
 
   // Chat
-  sendMessage(sessionId: string, message: string, userRole: string, userName: string) {
+  sendMessage(
+    sessionId: string,
+    message: string,
+    userRole: string,
+    userName: string,
+    userPhone = 'dashboard-test',
+    modelKey = 'best'
+  ) {
     return this.http.post(`${this.api}/api/chat/message`, {
-      sessionId, message, userRole, userName
+      sessionId, message, userRole, userName, userPhone, modelKey
     });
   }
 

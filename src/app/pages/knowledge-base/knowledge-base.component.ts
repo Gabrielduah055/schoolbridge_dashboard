@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IconName, getIconPath } from '../../core/navigation';
 import { ApiKnowledgeItem, ApiService } from '../../core/services/api.service';
@@ -45,6 +45,13 @@ interface QuestionRow {
 interface ChatMessage {
   sender: 'Bot' | 'You';
   text: string;
+  thinking?: boolean;
+  typing?: boolean;
+}
+
+interface SelectOption {
+  label: string;
+  value: string;
 }
 
 const recommendedDocuments = [
@@ -58,6 +65,38 @@ const recommendedDocuments = [
 
 const tones = ['purple', 'blue', 'pink', 'emerald', 'amber', 'red'];
 
+const categoryOptions: SelectOption[] = [
+  { label: 'Fee Structure', value: 'fee_structure' },
+  { label: 'Student Records', value: 'student_records' },
+  { label: 'School Calendar', value: 'school_calendar' },
+  { label: 'School Policies', value: 'school_policies' },
+  { label: 'Exam Timetable', value: 'exam_timetable' },
+  { label: 'Class Timetable', value: 'class_timetable' },
+  { label: 'Teacher Directory', value: 'teacher_directory' },
+  { label: 'Other', value: 'other' }
+];
+
+const modelOptions: SelectOption[] = [
+  { label: 'Best - Claude Sonnet', value: 'best' },
+  { label: 'Fast - Claude Haiku', value: 'fast' },
+  { label: 'Cheap - Qwen', value: 'cheap' },
+  { label: 'GPT - GPT-4o', value: 'gpt' },
+  { label: 'Flash - Gemini Lite', value: 'flash' },
+  { label: 'Free - Llama', value: 'free' }
+];
+
+const roleOptions: SelectOption[] = [
+  { label: 'Parent', value: 'parent' },
+  { label: 'Teacher', value: 'teacher' },
+  { label: 'Admin', value: 'admin' }
+];
+
+const chatStorageKey = 'schoolbridge.knowledgeBase.chat';
+const chatSettingsStorageKey = 'schoolbridge.knowledgeBase.chatSettings';
+const fallbackChat: ChatMessage[] = [
+  { sender: 'Bot', text: 'Ask a parent-style question to test the backend chat.' }
+];
+
 @Component({
   selector: 'app-knowledge-base-page',
   standalone: true,
@@ -65,8 +104,11 @@ const tones = ['purple', 'blue', 'pink', 'emerald', 'amber', 'red'];
   templateUrl: './knowledge-base.component.html',
   styleUrl: './knowledge-base.component.css'
 })
-export class KnowledgeBaseComponent implements OnInit {
+export class KnowledgeBaseComponent implements OnInit, OnDestroy {
   readonly getIconPath = getIconPath;
+  readonly categoryOptions = categoryOptions;
+  readonly modelOptions = modelOptions;
+  readonly roleOptions = roleOptions;
 
   loading = true;
   uploading = false;
@@ -74,8 +116,14 @@ export class KnowledgeBaseComponent implements OnInit {
   error = '';
   uploadMessage = '';
   selectedFile: File | null = null;
+  selectedCategory = 'school_policies';
   chatInput = '';
-  readonly sessionId = `knowledge-test-${Date.now()}`;
+  selectedRole = 'parent';
+  selectedModelKey = 'best';
+  testUserName = 'Dashboard tester';
+  testUserPhone = 'dashboard-test';
+  private typingTimer = 0;
+  readonly sessionId = 'knowledge-test-dashboard';
 
   stats: KnowledgeStat[] = [
     { kicker: '1', label: 'Documents Uploaded', value: '-', note: 'Loading...', icon: 'file', tone: 'purple' },
@@ -108,14 +156,17 @@ export class KnowledgeBaseComponent implements OnInit {
     { label: 'Most Asked', value: '-', detail: 'Not exposed by backend yet', tone: 'gray' }
   ];
 
-  chat: ChatMessage[] = [
-    { sender: 'Bot', text: 'Ask a parent-style question to test the backend chat.' }
-  ];
+  chat: ChatMessage[] = [...fallbackChat];
 
   constructor(private api: ApiService) {}
 
   ngOnInit(): void {
+    this.restoreChatState();
     this.loadKnowledge();
+  }
+
+  ngOnDestroy(): void {
+    window.clearInterval(this.typingTimer);
   }
 
   selectKnowledgeFile(event: Event): void {
@@ -132,20 +183,21 @@ export class KnowledgeBaseComponent implements OnInit {
 
     const formData = new FormData();
     formData.append('file', this.selectedFile);
+    formData.append('category', this.selectedCategory);
     this.uploading = true;
-    this.uploadMessage = 'Uploading and training...';
+    this.uploadMessage = `Uploading as ${this.categoryLabel(this.selectedCategory)} and training...`;
 
     this.api.uploadKnowledge(formData).subscribe({
       next: () => {
         this.uploading = false;
-        this.uploadMessage = 'Document uploaded. Refreshing library...';
+        this.uploadMessage = 'Document uploaded and bot training refreshed.';
         this.selectedFile = null;
         this.loadKnowledge();
       },
       error: (err) => {
         console.error('Failed to upload knowledge document', err);
         this.uploading = false;
-        this.uploadMessage = 'Upload failed. Please try again.';
+        this.uploadMessage = this.extractError(err) || 'Upload failed. Please try again.';
       }
     });
   }
@@ -155,20 +207,112 @@ export class KnowledgeBaseComponent implements OnInit {
     if (!message || this.sending) return;
 
     this.chat = [...this.chat, { sender: 'You', text: message }];
+    const botMessageIndex = this.chat.length;
+    this.chat = [...this.chat, { sender: 'Bot', text: 'Thinking', thinking: true }];
+    this.persistChatState();
     this.chatInput = '';
     this.sending = true;
 
-    this.api.sendMessage(this.sessionId, message, 'parent', 'Dashboard tester').subscribe({
+    this.api.sendMessage(
+      this.sessionId,
+      message,
+      this.selectedRole,
+      this.testUserName,
+      this.testUserPhone,
+      this.selectedModelKey
+    ).subscribe({
       next: (response) => {
-        this.chat = [...this.chat, { sender: 'Bot', text: this.extractReply(response) }];
-        this.sending = false;
+        this.typeBotReply(botMessageIndex, this.extractReply(response));
       },
       error: (err) => {
         console.error('Failed to send test message', err);
-        this.chat = [...this.chat, { sender: 'Bot', text: 'The backend chat endpoint did not respond.' }];
-        this.sending = false;
+        this.typeBotReply(botMessageIndex, this.extractError(err) || 'The backend chat endpoint did not respond.');
       }
     });
+  }
+
+  private typeBotReply(index: number, reply: string): void {
+    window.clearInterval(this.typingTimer);
+
+    let cursor = 0;
+    this.chat = this.chat.map((message, messageIndex) =>
+      messageIndex === index
+        ? { sender: 'Bot', text: '', typing: true }
+        : message
+    );
+
+    this.typingTimer = window.setInterval(() => {
+      cursor = Math.min(cursor + this.nextTypingStep(reply, cursor), reply.length);
+
+      this.chat = this.chat.map((message, messageIndex) =>
+        messageIndex === index
+          ? { sender: 'Bot', text: reply.slice(0, cursor), typing: cursor < reply.length }
+          : message
+      );
+
+      if (cursor >= reply.length) {
+        window.clearInterval(this.typingTimer);
+        this.sending = false;
+        this.persistChatState();
+      }
+    }, 22);
+  }
+
+  clearTestChat(): void {
+    window.clearInterval(this.typingTimer);
+    this.sending = false;
+    this.chat = [...fallbackChat];
+    this.persistChatState();
+  }
+
+  persistChatState(): void {
+    const settledChat = this.chat
+      .filter((message) => !message.thinking && !message.typing)
+      .map(({ sender, text }) => ({ sender, text }));
+
+    localStorage.setItem(chatStorageKey, JSON.stringify(settledChat.length ? settledChat : fallbackChat));
+    localStorage.setItem(chatSettingsStorageKey, JSON.stringify({
+      selectedRole: this.selectedRole,
+      selectedModelKey: this.selectedModelKey
+    }));
+  }
+
+  private restoreChatState(): void {
+    const savedChat = this.readStoredJson<ChatMessage[]>(chatStorageKey);
+    if (Array.isArray(savedChat) && savedChat.length > 0) {
+      this.chat = savedChat
+        .filter((message) => message?.sender === 'Bot' || message?.sender === 'You')
+        .map((message) => ({ sender: message.sender, text: String(message.text || '') }))
+        .filter((message) => message.text.trim());
+    }
+
+    if (this.chat.length === 0) {
+      this.chat = [...fallbackChat];
+    }
+
+    const settings = this.readStoredJson<{ selectedRole?: string; selectedModelKey?: string }>(chatSettingsStorageKey);
+    if (settings?.selectedRole && roleOptions.some((option) => option.value === settings.selectedRole)) {
+      this.selectedRole = settings.selectedRole;
+    }
+    if (settings?.selectedModelKey && modelOptions.some((option) => option.value === settings.selectedModelKey)) {
+      this.selectedModelKey = settings.selectedModelKey;
+    }
+  }
+
+  private readStoredJson<T>(key: string): T | null {
+    try {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) as T : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private nextTypingStep(text: string, cursor: number): number {
+    const current = text[cursor] ?? '';
+    if (current === ' ' || current === '\n') return 2;
+    if (['.', ',', ':', ';', '?', '!'].includes(current)) return 1;
+    return 3;
   }
 
   private loadKnowledge(): void {
@@ -202,7 +346,7 @@ export class KnowledgeBaseComponent implements OnInit {
       subtitle: category,
       fileName,
       fileType: this.fileType(fileName),
-      fileSize: this.fileSize(this.getNumber(item, ['size', 'fileSize'])),
+      fileSize: this.getText(item, ['fileSize']) || this.fileSize(this.getNumber(item, ['size'])),
       uploadedAt: this.formatDate(created),
       status: this.getText(item, ['status']) || 'Active',
       action: 'Trained source',
@@ -245,7 +389,7 @@ export class KnowledgeBaseComponent implements OnInit {
       .map((item) => [
         this.getText(item, ['title', 'name']),
         this.getText(item, ['fileName', 'originalName', 'filename']),
-        this.getText(item, ['category', 'type', 'documentType'])
+        this.categoryLabel(this.getText(item, ['category', 'type', 'documentType']))
       ].join(' ').toLowerCase())
       .join(' ');
 
@@ -270,6 +414,19 @@ export class KnowledgeBaseComponent implements OnInit {
     }
 
     return 'The backend returned a response without display text.';
+  }
+
+  private extractError(error: unknown): string {
+    if (!error || typeof error !== 'object') return '';
+    const record = error as Record<string, unknown>;
+    const payload = record['error'];
+    if (typeof payload === 'string') return payload;
+    if (payload && typeof payload === 'object') {
+      const message = (payload as Record<string, unknown>)['error'] || (payload as Record<string, unknown>)['message'];
+      if (typeof message === 'string') return message;
+    }
+    const message = record['message'];
+    return typeof message === 'string' ? message : '';
   }
 
   private getText(source: unknown, paths: string[]): string {
@@ -304,6 +461,12 @@ export class KnowledgeBaseComponent implements OnInit {
 
   private titleFromFile(name: string): string {
     return name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || 'Untitled';
+  }
+
+  categoryLabel(value: string): string {
+    return categoryOptions.find((option) => option.value === value)?.label
+      || value.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+      || 'Document';
   }
 
   private fileSize(bytes: number): string {

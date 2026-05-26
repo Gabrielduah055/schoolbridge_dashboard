@@ -8,7 +8,8 @@
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -150,6 +151,7 @@ svg {
 .metric-card p,
 .upload-card span,
 .bot-test-card p,
+.field-control span,
 .message-box input::placeholder {
   margin: 0;
   color: #94a3b8;
@@ -710,7 +712,7 @@ svg {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 52px;
   gap: 10px;
-  margin: 12px 0;
+  margin: 12px 0 10px;
 }
 
 .upload-options button {
@@ -729,6 +731,23 @@ svg {
 .upload-message {
   margin-bottom: 12px;
   color: #c4b5fd;
+}
+
+.field-control {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.field-control select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  color: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  outline: 0;
+  background: #13132a;
 }
 
 .toggle {
@@ -776,6 +795,26 @@ svg {
   min-height: 482px;
 }
 
+.bot-test-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bot-test-head h2 {
+  margin: 0;
+}
+
+.bot-test-head button {
+  min-height: 30px;
+  padding: 0 10px;
+  color: #c4b5fd;
+  border: 1px solid rgba(196, 181, 253, 0.24);
+  border-radius: 8px;
+  background: rgba(13, 13, 26, 0.46);
+}
+
 .bot-test-card h2::before {
   margin-right: 8px;
   color: #5eead4;
@@ -786,10 +825,49 @@ svg {
   color: #a78bfa;
 }
 
+.bot-controls {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.role-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  background: rgba(13, 13, 26, 0.42);
+}
+
+.role-tabs button {
+  min-height: 32px;
+  color: #94a3b8;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.role-tabs button.active {
+  color: #f8fafc;
+  background: rgba(20, 184, 166, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.34);
+}
+
+.compact-field {
+  margin-bottom: 0;
+}
+
 .chat-thread {
   display: grid;
   gap: 12px;
   margin: 18px 0;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .chat-thread article {
@@ -822,11 +900,52 @@ svg {
   color: #fff;
   border-radius: 10px;
   background: rgba(75, 85, 99, 0.5);
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .chat-thread article.you p {
   background: linear-gradient(135deg, #8b5cf6, #6d28d9);
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.24);
+}
+
+.chat-thread article p.thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #c4b5fd;
+}
+
+.chat-thread article p.thinking em {
+  font-style: normal;
+}
+
+.chat-thread article p.thinking i {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: thinkingPulse 900ms ease-in-out infinite;
+}
+
+.chat-thread article p.thinking i:nth-of-type(2) {
+  animation-delay: 140ms;
+}
+
+.chat-thread article p.thinking i:nth-of-type(3) {
+  animation-delay: 280ms;
+}
+
+.chat-thread article p.typing b {
+  display: inline-block;
+  width: 7px;
+  height: 16px;
+  margin-left: 3px;
+  vertical-align: -2px;
+  border-radius: 999px;
+  background: #c4b5fd;
+  animation: caretBlink 820ms steps(2, start) infinite;
 }
 
 .message-box {
@@ -858,6 +977,32 @@ svg {
   border: 0;
   border-radius: 9px;
   background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+
+@keyframes thinkingPulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes caretBlink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @media (max-width: 1550px) {
