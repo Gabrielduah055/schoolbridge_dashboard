@@ -931,3 +931,105 @@ button:disabled,
 
 /* Make table rows feel clickable */
 .student-table tbody tr { cursor: pointer; }
+
+/* Updated students list layout */
+.students-page {
+  display: block;
+}
+
+.students-main {
+  min-width: 0;
+}
+
+.student-workspace {
+  display: block;
+}
+
+.table-toolbar {
+  grid-template-columns: minmax(130px, 1fr) minmax(240px, 36%) minmax(160px, 190px) minmax(160px, 190px);
+}
+
+.filter-control {
+  display: grid;
+  gap: 4px;
+}
+
+.filter-control span {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.filter-control select {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 12px;
+  color: #f8fafc;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: rgba(13, 13, 26, 0.48);
+  outline: 0;
+  transition: transform 200ms ease, border-color 200ms ease;
+}
+
+.filter-control select:hover,
+.filter-control select:focus {
+  transform: translateY(-2px);
+  border-color: rgba(139, 92, 246, 0.46);
+}
+
+.student-table-wrap {
+  max-height: 386px;
+}
+
+.student-table tbody tr:focus {
+  outline: 0;
+  background: rgba(139, 92, 246, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.32);
+}
+
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 7px;
+  background: rgba(139, 92, 246, 0.12);
+}
+
+.class-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.class-head {
+  min-width: 0;
+}
+
+.class-head > span {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  font-size: 13px;
+}
+
+.class-head div {
+  min-width: 0;
+}
+
+.class-head strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .table-toolbar {
+    grid-template-columns: 1fr;
+  }
+}

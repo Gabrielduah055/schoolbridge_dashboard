@@ -15,6 +15,7 @@ import { KnowledgeBaseComponent } from './pages/knowledge-base/knowledge-base.co
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { ReportCardsComponent } from './pages/report-cards/report-cards.component';
 import { SettingsComponent } from './pages/settings/settings.component';
+import { StudentDetailsComponent } from './pages/student-details/student-details.component';
 import { StudentsComponent } from './pages/students/students.component';
 import { TeachersComponent } from './pages/teachers/teachers.component';
 
@@ -25,6 +26,7 @@ export const routes: Routes = [
     children: [
       { path: '', component: DashboardComponent },
       { path: 'students', component: StudentsComponent },
+      { path: 'students/:id', component: StudentDetailsComponent },
       { path: 'teachers', component: TeachersComponent },
       { path: 'knowledge-base', component: KnowledgeBaseComponent },
       { path: 'announcements', component: AnnouncementsComponent },

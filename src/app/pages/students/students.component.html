@@ -46,106 +46,93 @@
       </article>
     </div>
 
-    <div class="student-workspace">
-      <section class="card student-table-card">
-        <div class="table-toolbar">
-          <h3>All Students</h3>
-          <label class="inline-search">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="getIconPath('search')" />
-            </svg>
-            <input type="search" placeholder="Search by name or class..." [(ngModel)]="searchTerm" />
-          </label>
-          <button type="button">Class</button>
-          <button type="button">Status</button>
-        </div>
+    <section class="card student-table-card">
+      <div class="table-toolbar">
+        <h3>All Students</h3>
+        <label class="inline-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path [attr.d]="getIconPath('search')" />
+          </svg>
+          <input type="search" placeholder="Search by name..." [(ngModel)]="searchTerm" />
+        </label>
+        <label class="filter-control">
+          <span>Class</span>
+          <select [(ngModel)]="classFilter" aria-label="Filter students by class">
+            <option value="">All classes</option>
+            <option *ngFor="let className of classOptions" [value]="className">{{ className }}</option>
+          </select>
+        </label>
+        <label class="filter-control">
+          <span>Status</span>
+          <select [(ngModel)]="statusFilter" aria-label="Filter students by fee status">
+            <option value="">All statuses</option>
+            <option value="Paid">Paid</option>
+            <option value="Partial">Partial</option>
+            <option value="Unpaid">Unpaid</option>
+          </select>
+        </label>
+      </div>
 
-        <!-- Loading state -->
-        <div *ngIf="loading" class="table-loading">
-          <p>Loading students…</p>
-        </div>
+      <div *ngIf="loading" class="table-loading">
+        <p>Loading students...</p>
+      </div>
 
-        <!-- Error state -->
-        <div *ngIf="!loading && error" class="table-error">
-          <p>{{ error }}</p>
-        </div>
+      <div *ngIf="!loading && error" class="table-error">
+        <p>{{ error }}</p>
+      </div>
 
-        <!-- Student table -->
-        <div class="student-table-wrap" *ngIf="!loading && !error">
-          <div *ngIf="students.length === 0" class="table-empty">
-            <p>No students found in the backend yet.</p>
-          </div>
-          <div *ngIf="students.length > 0 && filteredStudents.length === 0" class="table-empty">
-            <p>No students match your search.</p>
-          </div>
-          <table class="student-table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Class</th>
-                <th>Parent</th>
-                <th>Parent Phone</th>
-                <th>Fee Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let student of filteredStudents"
-                [class.selected]="selectedStudent?.name === student.name"
-                (click)="selectStudent(student, rawStudents[student.rawIndex])"
-                style="cursor: pointer"
-              >
-                <td>
-                  <div class="student-cell">
-                    <span [class]="'avatar tone-' + student.tone">{{ student.initials }}</span>
-                    <div>
-                      <strong>{{ student.name }}</strong>
-                      <span>{{ student.admissionNo }}</span>
-                    </div>
+      <div class="student-table-wrap" *ngIf="!loading && !error">
+        <div *ngIf="students.length === 0" class="table-empty">
+          <p>No students found in the backend yet.</p>
+        </div>
+        <div *ngIf="students.length > 0 && filteredStudents.length === 0" class="table-empty">
+          <p>No students match your filters.</p>
+        </div>
+        <table class="student-table" *ngIf="filteredStudents.length > 0">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Class</th>
+              <th>Parent</th>
+              <th>Parent Phone</th>
+              <th>Fee Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let student of filteredStudents"
+              [routerLink]="['/students', student.routeId]"
+              [attr.aria-label]="'Open details for ' + student.name"
+              tabindex="0"
+            >
+              <td>
+                <div class="student-cell">
+                  <span [class]="'avatar tone-' + student.tone">{{ student.initials }}</span>
+                  <div>
+                    <strong>{{ student.name }}</strong>
+                    <span>{{ student.admissionNo }}</span>
                   </div>
-                </td>
-                <td><span class="class-pill">{{ student.className }}</span></td>
-                <td>{{ student.parent }}</td>
-                <td>
-                  <span class="phone-cell">{{ student.phone }} <b>WA</b></span>
-                </td>
-                <td>
-                  <span [class]="'fee-status ' + getFeeStatusClass(student.feeStatus)">
-                    {{ student.feeStatus }}
-                  </span>
-                </td>
-                <td><button class="row-action" type="button" (click)="$event.stopPropagation()">...</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Unregistered parents sidebar (always visible) -->
-      <aside class="side-stack">
-        <section class="card unregistered-card">
-          <h3>
-            <span>!</span>
-            Unregistered Parents
-          </h3>
-
-          <div class="unregistered-list">
-            <article *ngFor="let parent of unregisteredParents">
-              <span [class]="'avatar tone-' + parent.tone">{{ parent.initials }}</span>
-              <div>
-                <strong>{{ parent.name }}</strong>
-                <p>{{ parent.admissionNo }}</p>
-              </div>
-              <button type="button">Remind</button>
-            </article>
-            <p *ngIf="unregisteredParents.length === 0" class="empty-copy">All listed students have parent contact details.</p>
-          </div>
-
-          <button class="bulk-button" type="button">Bulk reminder</button>
-        </section>
-      </aside>
-    </div>
+                </div>
+              </td>
+              <td><span class="class-pill">{{ student.className }}</span></td>
+              <td>{{ student.parent }}</td>
+              <td>
+                <span class="phone-cell">{{ student.phone }} <b>WA</b></span>
+              </td>
+              <td>
+                <span [class]="'fee-status ' + getFeeStatusClass(student.feeStatus)">
+                  {{ student.feeStatus }}
+                </span>
+              </td>
+              <td>
+                <a class="row-action" [routerLink]="['/students', student.routeId]" (click)="$event.stopPropagation()">View</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <section class="card class-overview-card">
       <h3>Class Overview</h3>
@@ -153,9 +140,9 @@
       <div class="class-grid">
         <article *ngFor="let item of classOverview" [class]="'class-card tone-' + item.tone" [class.active]="item.active">
           <div class="class-head">
-            <span>{{ item.name }}</span>
+            <span>{{ item.label }}</span>
             <div>
-              <strong>{{ item.section }}</strong>
+              <strong>{{ item.name }}</strong>
               <p>{{ item.teacher }}</p>
             </div>
           </div>
@@ -172,77 +159,4 @@
       </div>
     </section>
   </div>
-
-  <!-- ── Student Profile Panel ── always in DOM, slides in when a student is selected ── -->
-  <aside
-    class="student-profile-panel"
-    [class.panel-visible]="selectedStudent"
-    style="background:
-      radial-gradient(circle at 58% 4%, rgba(139,92,246,0.44), transparent 6rem),
-      radial-gradient(circle at 76% 86%, rgba(139,92,246,0.22), transparent 8rem),
-      #13132a;
-      border: 1px solid rgba(139,92,246,0.18);
-      border-radius: 10px;
-      padding: 14px;"
-  >
-    <ng-container *ngIf="selectedStudent">
-      <button
-        class="close-button"
-        type="button"
-        aria-label="Close student profile"
-        (click)="closeStudentPanel()"
-      >✕</button>
-
-      <div class="profile-top">
-        <span class="profile-avatar">{{ selectedStudent.initials }}</span>
-        <h3>{{ selectedStudent.name }}</h3>
-        <p>{{ selectedStudent.className }}</p>
-      </div>
-
-      <div class="profile-grid">
-        <div>
-          <span>Admission No</span>
-          <strong>{{ selectedStudent.admissionNo }}</strong>
-        </div>
-        <div>
-          <span>Class</span>
-          <strong>{{ selectedStudent.classDetail }}</strong>
-        </div>
-        <div>
-          <span>Date Enrolled</span>
-          <strong>{{ selectedStudent.enrolled }}</strong>
-        </div>
-        <div>
-          <span>Age</span>
-          <strong>{{ selectedStudent.age }}</strong>
-        </div>
-      </div>
-
-      <div class="profile-fee">
-        <h4>Fee</h4>
-        <div class="fee-metrics">
-          <span>Term fee <strong>{{ selectedStudent.termFee }}</strong></span>
-          <span>Outstanding <strong>{{ selectedStudent.outstanding }}</strong></span>
-        </div>
-        <div class="fee-track">
-          <span [style.width.%]="selectedStudent.progress"></span>
-        </div>
-        <p>{{ selectedStudent.progress }}%</p>
-      </div>
-
-      <div class="profile-tabs">
-        <button class="active" type="button">Profile</button>
-        <button type="button">Fees</button>
-        <button type="button">Attendance</button>
-        <button type="button">Messages</button>
-      </div>
-
-      <div class="profile-actions">
-        <button class="primary-button" type="button">Message Parent</button>
-        <button class="amber-button" type="button">Send Fee Reminder</button>
-        <button class="outline-button" type="button">View Full History</button>
-      </div>
-    </ng-container>
-  </aside>
-
 </section>
