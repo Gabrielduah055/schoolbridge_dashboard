@@ -13,8 +13,8 @@ import { TopbarComponent } from '../../shared/components/topbar/topbar.component
   styleUrl: './admin-layout.component.css'
 })
 export class AdminLayoutComponent implements OnDestroy {
-  pageTitle = 'Dashboard';
-  pageSubtitle = 'Good morning, Mr. Asante';
+  pageTitle = 'Overview';
+  pageSubtitle = 'Communication control center for school admins';
 
   private readonly subscription: Subscription;
 
@@ -34,24 +34,72 @@ export class AdminLayoutComponent implements OnDestroy {
     const activeItem = NAVIGATION_ITEMS.find((item) => item.path === cleanUrl);
 
     if (cleanUrl === '/students') {
-      this.pageTitle = 'Students & Parents';
-      this.pageSubtitle = 'Manage all students and their guardians';
+      this.pageTitle = 'Students';
+      this.pageSubtitle = 'Student records used for communication matching';
+      return;
+    }
+
+    if (cleanUrl.startsWith('/students/')) {
+      this.pageTitle = 'Student Details';
+      this.pageSubtitle = 'View student profile, guardian, class, and fee details';
+      return;
+    }
+
+    if (cleanUrl === '/parents') {
+      this.pageTitle = 'Parents';
+      this.pageSubtitle = 'Guardian contacts and communication identities';
       return;
     }
 
     if (cleanUrl === '/teachers') {
       this.pageTitle = 'Teachers';
-      this.pageSubtitle = 'Manage teaching staff and their activities';
+      this.pageSubtitle = 'Teaching staff communication context';
+      return;
+    }
+
+    if (cleanUrl === '/classes') {
+      this.pageTitle = 'Classes';
+      this.pageSubtitle = 'Class-based audiences for broadcasts and follow-ups';
       return;
     }
 
     if (cleanUrl === '/knowledge-base') {
-      this.pageTitle = 'Knowledge Base - The Brain';
-      this.pageSubtitle = 'Everything the AI learns about your school lives here. Upload documents and the bot instantly knows.';
+      this.pageTitle = 'Knowledge Base';
+      this.pageSubtitle = 'Source material the AI uses to answer school questions';
+      return;
+    }
+
+    if (cleanUrl === '/conversations' || cleanUrl.startsWith('/conversations/')) {
+      this.pageTitle = 'Conversations';
+      this.pageSubtitle = 'Shared inbox for parent, teacher, and AI-assisted threads';
+      return;
+    }
+
+    if (cleanUrl === '/handover-queue') {
+      this.pageTitle = 'Handover Queue';
+      this.pageSubtitle = 'Escalations that need human attention';
+      return;
+    }
+
+    if (cleanUrl === '/broadcasts') {
+      this.pageTitle = 'Broadcasts';
+      this.pageSubtitle = 'Draft, approve, and monitor school-wide communication';
+      return;
+    }
+
+    if (cleanUrl === '/channels') {
+      this.pageTitle = 'Channels';
+      this.pageSubtitle = 'Provider connection status, delivery logs, and webhook events';
+      return;
+    }
+
+    if (cleanUrl === '/settings') {
+      this.pageTitle = 'Settings';
+      this.pageSubtitle = 'Backend access and dashboard configuration';
       return;
     }
 
     this.pageTitle = activeItem?.label ?? 'Page Not Found';
-    this.pageSubtitle = cleanUrl === '/' ? 'Good morning, Mr. Asante' : 'This section is currently under construction';
+    this.pageSubtitle = cleanUrl === '/' ? 'Communication control center for school admins' : 'This section is currently outside the MVP navigation';
   }
 }

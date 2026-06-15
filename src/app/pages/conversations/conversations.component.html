@@ -1,0 +1,175 @@
+<section class="comm-page conversations-page">
+  <div *ngIf="error" class="comm-card pad inbox-error">{{ error }}</div>
+
+  <div class="inbox-shell">
+    <aside class="comm-card filter-panel" aria-label="Conversation filters">
+      <h2>Filters</h2>
+
+      <label>
+        <span>Search</span>
+        <input type="search" [(ngModel)]="filters.search" placeholder="Name, phone, class..." />
+      </label>
+
+      <label>
+        <span>Channel</span>
+        <select [(ngModel)]="filters.channel">
+          <option value="">All channels</option>
+          <option value="telegram">Telegram</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="dashboard">Dashboard</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Role</span>
+        <select [(ngModel)]="filters.role">
+          <option value="">All roles</option>
+          <option value="parent">Parent</option>
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+          <option value="visitor">Visitor</option>
+          <option value="unregistered">Unregistered</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Status</span>
+        <select [(ngModel)]="filters.status">
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="active">Active</option>
+          <option value="ai_replied">AI replied</option>
+          <option value="needs_human">Needs human</option>
+          <option value="assigned">Assigned</option>
+          <option value="resolved">Resolved</option>
+          <option value="failed">Failed</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Handover</span>
+        <select [(ngModel)]="filters.handover">
+          <option value="">All conversations</option>
+          <option value="yes">Needs handover</option>
+          <option value="no">No handover</option>
+        </select>
+      </label>
+
+      <button class="comm-button-secondary" type="button" (click)="resetFilters()">Reset filters</button>
+    </aside>
+
+    <section class="comm-card conversation-list-panel">
+      <div class="comm-card-header">
+        <div>
+          <h2>Shared Inbox</h2>
+          <p>{{ filteredConversations.length }} conversation{{ filteredConversations.length === 1 ? '' : 's' }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && filteredConversations.length === 0" class="empty-state">
+        <div>
+          <strong>No conversations yet</strong>
+          <p>New communication threads will appear in this inbox.</p>
+        </div>
+      </div>
+
+      <button
+        *ngFor="let conversation of filteredConversations"
+        type="button"
+        class="conversation-list-item"
+        [class.active]="conversationId(conversation) === selectedConversationId"
+        (click)="selectConversation(conversation)"
+      >
+        <span class="conversation-avatar">{{ (conversation.participantName || conversation.participantRole || '?').slice(0, 2).toUpperCase() }}</span>
+        <span class="conversation-summary">
+          <strong>{{ conversation.participantName || 'Unknown participant' }}</strong>
+          <span>{{ bodyPreview(conversation) }}</span>
+        </span>
+        <span class="conversation-meta">
+          <time>{{ formatDate(conversation.lastMessageAt || conversation.updatedAt) }}</time>
+          <b [class]="'status-badge ' + statusClass(conversation.status)">{{ conversation.status }}</b>
+        </span>
+      </button>
+    </section>
+
+    <section class="comm-card thread-panel" *ngIf="selectedConversation as conversation; else noSelection">
+      <div class="thread-header">
+        <div>
+          <h2>{{ conversation.participantName || 'Unknown participant' }}</h2>
+          <p>
+            <span class="role-badge">{{ conversation.participantRole }}</span>
+            <span class="channel-badge">{{ conversation.channel }}</span>
+            <span [class]="'status-badge ' + statusClass(conversation.status)">{{ conversation.status }}</span>
+          </p>
+        </div>
+        <div class="thread-actions">
+          <button class="comm-button-secondary" type="button" disabled>Assign</button>
+          <button class="comm-button-secondary" type="button" disabled>Resolve</button>
+        </div>
+      </div>
+
+      <div class="detail-strip">
+        <div>
+          <span>Linked student</span>
+          <strong>{{ conversation.studentId || 'Not linked' }}</strong>
+        </div>
+        <div>
+          <span>Class</span>
+          <strong>{{ conversation.classId || 'Not linked' }}</strong>
+        </div>
+        <div>
+          <span>Assigned user</span>
+          <strong>{{ conversation.assignedTo || 'Unassigned' }}</strong>
+        </div>
+        <div>
+          <span>Phone</span>
+          <strong>{{ conversation.participantPhone || conversation.parentPhone || '-' }}</strong>
+        </div>
+      </div>
+
+      <div *ngIf="messageError" class="message-error">{{ messageError }}</div>
+
+      <div class="message-thread" *ngIf="!messagesLoading && messages.length > 0">
+        <article *ngFor="let message of messages" [class]="'message-bubble ' + message.direction">
+          <div class="message-bubble-header">
+            <span>{{ message.direction }}</span>
+            <span>{{ message.senderRole }}</span>
+            <span *ngIf="message.aiGenerated" class="ai-badge">AI-generated</span>
+            <span [class]="'status-badge ' + statusClass(message.status)">{{ message.status }}</span>
+          </div>
+          <p>{{ messageBody(message) }}</p>
+          <time>{{ formatDate(message.createdAt || message.sentAt) }}</time>
+        </article>
+      </div>
+
+      <div *ngIf="!messagesLoading && messages.length === 0" class="empty-state compact">
+        <div>
+          <strong>No messages in this thread</strong>
+          <p>The conversation exists, but message records were not returned.</p>
+        </div>
+      </div>
+
+      <div class="thread-workbench">
+        <label>
+          <span>Internal notes</span>
+          <textarea disabled placeholder="Internal notes placeholder"></textarea>
+        </label>
+        <label>
+          <span>Reply box</span>
+          <textarea disabled placeholder="Reply composer placeholder"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <ng-template #noSelection>
+      <section class="comm-card thread-panel">
+        <div class="empty-state">
+          <div>
+            <strong>Select a conversation</strong>
+            <p>Conversation details and messages will appear here.</p>
+          </div>
+        </div>
+      </section>
+    </ng-template>
+  </div>
+</section>

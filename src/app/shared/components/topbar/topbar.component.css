@@ -22,19 +22,19 @@ svg {
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) minmax(280px, 460px) minmax(260px, auto);
+  grid-template-columns: minmax(190px, 1fr) minmax(280px, 480px) minmax(230px, auto);
   gap: 22px;
   align-items: center;
   min-height: 78px;
   padding: 14px 22px;
-  background: rgba(19, 19, 42, 0.93);
-  border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+  background: color-mix(in srgb, var(--sb-panel) 92%, transparent);
+  border-bottom: 1px solid var(--sb-border);
   backdrop-filter: blur(16px);
 }
 
 .topbar h1 {
   margin: 0 0 4px;
-  color: #f8fafc;
+  color: var(--sb-text);
   font-size: 24px;
   font-weight: 800;
   letter-spacing: 0;
@@ -42,7 +42,7 @@ svg {
 
 .topbar p {
   margin: 0;
-  color: #94a3b8;
+  color: var(--sb-muted);
   font-size: 14px;
 }
 
@@ -52,30 +52,30 @@ svg {
   gap: 10px;
   min-height: 42px;
   padding: 0 14px;
-  color: #64748b;
-  border: 1px solid rgba(139, 92, 246, 0.34);
+  color: var(--sb-muted);
+  border: 1px solid var(--sb-border);
   border-radius: 8px;
-  background: rgba(13, 13, 26, 0.72);
-  box-shadow: 0 0 22px rgba(139, 92, 246, 0.16), inset 0 0 10px rgba(139, 92, 246, 0.08);
+  background: var(--sb-surface);
+  box-shadow: none;
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .search-box:focus-within {
-  border-color: #8b5cf6;
-  box-shadow: 0 0 28px rgba(139, 92, 246, 0.3);
+  border-color: var(--sb-accent);
+  box-shadow: 0 0 0 3px var(--sb-accent-faint);
 }
 
 .search-box input {
   width: 100%;
   min-width: 0;
-  color: #f8fafc;
+  color: var(--sb-text);
   border: 0;
   outline: 0;
   background: transparent;
 }
 
 .search-box input::placeholder {
-  color: #64748b;
+  color: var(--sb-muted);
 }
 
 .topbar-actions {
@@ -91,7 +91,7 @@ svg {
   place-items: center;
   width: 38px;
   height: 38px;
-  color: #94a3b8;
+  color: var(--sb-muted);
   cursor: pointer;
   border: 0;
   background: transparent;
@@ -111,8 +111,8 @@ svg {
   line-height: 18px;
   text-align: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-  box-shadow: 0 0 14px rgba(139, 92, 246, 0.48);
+  background: var(--sb-accent);
+  box-shadow: none;
 }
 
 .admin-avatar {
@@ -120,26 +120,26 @@ svg {
   place-items: center;
   width: 42px;
   height: 42px;
-  color: #f8fafc;
+  color: #fff;
   cursor: pointer;
-  border: 1px solid rgba(139, 92, 246, 0.45);
+  border: 1px solid var(--sb-accent);
   border-radius: 999px;
-  background: #13132a;
-  box-shadow: 0 0 18px rgba(139, 92, 246, 0.3);
+  background: var(--sb-accent);
+  box-shadow: none;
   font-size: 12px;
   font-weight: 800;
-  outline: 4px solid rgba(139, 92, 246, 0.13);
+  outline: 4px solid var(--sb-accent-faint);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
 .admin-avatar:hover,
 .notification-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 24px rgba(139, 92, 246, 0.36);
+  box-shadow: var(--sb-shadow);
 }
 
 .school-name {
-  color: #f8fafc;
+  color: var(--sb-text);
   font-size: 14px;
   white-space: nowrap;
 }

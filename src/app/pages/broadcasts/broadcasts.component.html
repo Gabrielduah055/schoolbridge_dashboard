@@ -1,0 +1,115 @@
+<section class="comm-page">
+  <div class="comm-grid cols-3">
+    <article class="comm-card metric-card">
+      <span>Sent</span>
+      <strong>{{ loading ? '-' : sentCount }}</strong>
+      <p>Completed broadcast sends</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Awaiting approval</span>
+      <strong>{{ loading ? '-' : pendingApprovalCount }}</strong>
+      <p>Draft or pending items</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Failed or partial</span>
+      <strong>{{ loading ? '-' : failedCount }}</strong>
+      <p>Needs delivery review</p>
+    </article>
+  </div>
+
+  <section class="comm-card pad">
+    <div class="draft-heading">
+      <div>
+        <h2 class="comm-section-title">Draft Broadcast</h2>
+        <p class="comm-muted">Create a simple admin broadcast draft for approval and sending.</p>
+      </div>
+      <button class="comm-button" type="button" [disabled]="saving" (click)="createDraft()">
+        {{ saving ? 'Creating...' : 'Create draft' }}
+      </button>
+    </div>
+
+    <div class="comm-form-grid">
+      <label class="comm-field">
+        <span>Title</span>
+        <input [(ngModel)]="draft.title" placeholder="Optional broadcast title" />
+      </label>
+      <label class="comm-field">
+        <span>Audience</span>
+        <select [(ngModel)]="draft.audienceType">
+          <option value="whole_school">Whole school</option>
+          <option value="parents">Parents</option>
+          <option value="teachers">Teachers</option>
+          <option value="class">Class</option>
+          <option value="individual">Individual</option>
+        </select>
+      </label>
+      <label class="comm-field full">
+        <span>Message</span>
+        <textarea [(ngModel)]="draft.originalText" placeholder="Write the broadcast message..."></textarea>
+      </label>
+      <div class="channel-checks">
+        <label><input type="checkbox" [(ngModel)]="draft.telegram" /> Telegram</label>
+        <label><input type="checkbox" [(ngModel)]="draft.whatsapp" /> WhatsApp future</label>
+      </div>
+    </div>
+
+    <p class="action-message" *ngIf="actionMessage">{{ actionMessage }}</p>
+  </section>
+
+  <section class="comm-card">
+    <div class="comm-card-header">
+      <div>
+        <h2>Broadcast History</h2>
+        <p>Approval status, recipients, and delivery summary</p>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="broadcast-error">{{ error }}</div>
+
+    <div *ngIf="!loading && broadcasts.length === 0" class="empty-state">
+      <div>
+        <strong>No broadcasts sent</strong>
+        <p>Draft and sent broadcasts will appear here once created.</p>
+      </div>
+    </div>
+
+    <div class="comm-table-wrap" *ngIf="broadcasts.length > 0">
+      <table class="comm-table">
+        <thead>
+          <tr>
+            <th>Broadcast</th>
+            <th>Approval</th>
+            <th>Audience</th>
+            <th>Channels</th>
+            <th>Status</th>
+            <th>Recipients</th>
+            <th>Delivery</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let broadcast of broadcasts">
+            <td>
+              <strong>{{ broadcast.title || 'Untitled broadcast' }}</strong>
+              <p class="comm-muted">{{ broadcast.draftedText || broadcast.originalText }}</p>
+            </td>
+            <td><span [class]="'status-badge ' + statusClass(broadcast.approvalStatus)">{{ broadcast.approvalStatus }}</span></td>
+            <td>{{ broadcast.audienceType }}</td>
+            <td>
+              <span class="channel-badge" *ngFor="let channel of broadcast.channels">{{ channel }}</span>
+            </td>
+            <td><span [class]="'status-badge ' + statusClass(broadcast.status)">{{ broadcast.status }}</span></td>
+            <td>{{ recipientCount(broadcast) }}</td>
+            <td>{{ deliverySummary(broadcast) }}</td>
+            <td>{{ formatDate(broadcast.createdAt) }}</td>
+            <td class="broadcast-actions">
+              <button class="comm-button-secondary" type="button" [disabled]="broadcast.approvalStatus === 'approved' || actionId === broadcastId(broadcast)" (click)="approve(broadcast)">Approve</button>
+              <button class="comm-button" type="button" [disabled]="broadcast.approvalStatus !== 'approved' || broadcast.status === 'sent' || actionId === broadcastId(broadcast)" (click)="send(broadcast)">Send</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

@@ -1,0 +1,18 @@
+:host {
+  display: block;
+}
+
+.queue-error {
+  padding: 14px 16px;
+  color: var(--sb-danger);
+}
+
+.queue-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.queue-actions a {
+  text-decoration: none;
+}

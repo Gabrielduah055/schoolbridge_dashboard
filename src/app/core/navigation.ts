@@ -1,11 +1,15 @@
 export type IconName =
   | 'home'
   | 'students'
+  | 'parents'
   | 'teachers'
+  | 'classes'
   | 'brain'
   | 'announcements'
   | 'mail'
   | 'chat'
+  | 'handover'
+  | 'channels'
   | 'wallet'
   | 'report'
   | 'attendance'
@@ -38,32 +42,31 @@ export interface NavigationItem {
 }
 
 export const NAVIGATION_ITEMS: NavigationItem[] = [
-  { label: 'Dashboard', icon: 'home', path: '/' },
-  { label: 'Students', icon: 'students', path: '/students' },
-  { label: 'Knowledge Base', icon: 'brain', path: '/knowledge-base' },
-  { label: 'Teachers', icon: 'teachers', path: '/teachers' },
-  { label: 'Announcements', icon: 'announcements', path: '/announcements' },
-  { label: 'Email Center', icon: 'mail', path: '/email-center' },
+  { label: 'Overview', icon: 'home', path: '/' },
   { label: 'Conversations', icon: 'chat', path: '/conversations' },
-  { label: 'Fee Management', icon: 'wallet', path: '/fee-management' },
-  { label: 'Report Cards', icon: 'report', path: '/report-cards' },
-  { label: 'Attendance', icon: 'attendance', path: '/attendance' },
-  { label: 'Exam Results', icon: 'exam', path: '/exam-results' },
-  { label: 'Events', icon: 'events', path: '/events' },
-  { label: 'Complaints', icon: 'complaints', path: '/complaints' },
-  { label: 'AI Assistant', icon: 'ai', path: '/ai-assistant' },
-  { label: 'Analytics', icon: 'analytics', path: '/analytics' },
+  { label: 'Handover Queue', icon: 'handover', path: '/handover-queue' },
+  { label: 'Broadcasts', icon: 'megaphone', path: '/broadcasts' },
+  { label: 'Students', icon: 'students', path: '/students' },
+  { label: 'Parents', icon: 'parents', path: '/parents' },
+  { label: 'Teachers', icon: 'teachers', path: '/teachers' },
+  { label: 'Classes', icon: 'classes', path: '/classes' },
+  { label: 'Knowledge Base', icon: 'brain', path: '/knowledge-base' },
+  { label: 'Channels', icon: 'channels', path: '/channels' },
   { label: 'Settings', icon: 'settings', path: '/settings' }
 ];
 
 export const ICON_PATHS: Record<IconName, string> = {
   home: 'M3 11.5 12 4l9 7.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z',
   students: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+  parents: 'M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM18 8h4M20 6v4M19 14a3 3 0 0 1 3 3v4',
   teachers: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+  classes: 'M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16H4V5ZM8 7h8M8 11h8M8 15h4M3 21h18',
   brain: 'M9.5 2.75A3.75 3.75 0 0 0 6 6.5v.2A3.5 3.5 0 0 0 3.5 12c0 1.25.66 2.35 1.65 2.96A3.75 3.75 0 0 0 9 21h.5V2.75ZM14.5 2.75A3.75 3.75 0 0 1 18 6.5v.2A3.5 3.5 0 0 1 20.5 12c0 1.25-.66 2.35-1.65 2.96A3.75 3.75 0 0 1 15 21h-.5V2.75ZM9.5 7.5H8a2 2 0 0 0-2 2M9.5 14.5H8.25A2.25 2.25 0 0 0 6 16.75M14.5 7.5H16a2 2 0 0 1 2 2M14.5 14.5h1.25A2.25 2.25 0 0 1 18 16.75',
   announcements: 'M3 11v2a2 2 0 0 0 2 2h2l4 4v-4h4l6 3V6l-6 3H5a2 2 0 0 0-2 2Z',
   mail: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm0 3 8 6 8-6',
   chat: 'M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8ZM8 10h.01M12 10h.01M16 10h.01',
+  handover: 'M8 7h8M8 11h5M7 19l-4 3V6a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v2M16 17l2 2 4-4M15 21a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z',
+  channels: 'M4 12a8 8 0 0 1 8-8M4 12a8 8 0 0 0 8 8M4 12h16M12 4a8 8 0 0 1 8 8M12 20a8 8 0 0 0 8-8M8 8h8M8 16h8',
   wallet: 'M20 7H5a3 3 0 0 0 0 6h15v7H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h15v3Zm-3 6h5v4h-5a2 2 0 0 1 0-4Z',
   report: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6M8 13h8M8 17h5',
   attendance: 'M9 11l2 2 4-5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
