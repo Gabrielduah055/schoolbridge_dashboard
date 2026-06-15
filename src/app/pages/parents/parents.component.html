@@ -1,0 +1,61 @@
+<section class="comm-page">
+  <div class="comm-grid cols-3">
+    <article class="comm-card metric-card">
+      <span>Parents</span>
+      <strong>{{ loading ? '-' : parents.length }}</strong>
+      <p>Derived from student contacts</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Reachable by phone</span>
+      <strong>{{ loading ? '-' : parents.length }}</strong>
+      <p>Primary communication identity</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Conversations</span>
+      <strong>-</strong>
+      <p>Use the shared inbox for live threads</p>
+    </article>
+  </div>
+
+  <section class="comm-card">
+    <div class="comm-card-header">
+      <div>
+        <h2>Parents</h2>
+        <p>Parent contacts available for communication</p>
+      </div>
+      <a class="text-link" routerLink="/conversations">View conversations</a>
+    </div>
+
+    <div *ngIf="error" class="simple-error">{{ error }}</div>
+
+    <div *ngIf="!loading && parents.length === 0" class="empty-state">
+      <div>
+        <strong>No parent contacts yet</strong>
+        <p>Import students with parent phone numbers to populate this view.</p>
+      </div>
+    </div>
+
+    <div class="comm-table-wrap" *ngIf="parents.length > 0">
+      <table class="comm-table">
+        <thead>
+          <tr>
+            <th>Parent</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Students</th>
+            <th>Classes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let parent of parents">
+            <td><strong>{{ parent.name }}</strong></td>
+            <td>{{ parent.phone }}</td>
+            <td>{{ parent.email || '-' }}</td>
+            <td>{{ parent.students.join(', ') }}</td>
+            <td>{{ parent.classes.join(', ') }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

@@ -1,0 +1,83 @@
+<section class="comm-page">
+  <div class="comm-grid cols-3">
+    <article class="comm-card metric-card">
+      <span>Open tickets</span>
+      <strong>{{ loading ? '-' : openTickets.length }}</strong>
+      <p>Human attention required</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Urgent or high</span>
+      <strong>{{ loading ? '-' : urgentCount }}</strong>
+      <p>Prioritize these first</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Resolved</span>
+      <strong>{{ loading ? '-' : resolvedCount }}</strong>
+      <p>Closed by staff</p>
+    </article>
+  </div>
+
+  <section class="comm-card">
+    <div class="comm-card-header">
+      <div>
+        <h2>Handover Queue</h2>
+        <p>Tickets needing human attention</p>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="queue-error">{{ error }}</div>
+
+    <div *ngIf="!loading && tickets.length === 0" class="empty-state">
+      <div>
+        <strong>No handover tickets</strong>
+        <p>Escalations from the AI communication core will appear here.</p>
+      </div>
+    </div>
+
+    <div class="comm-table-wrap" *ngIf="tickets.length > 0">
+      <table class="comm-table">
+        <thead>
+          <tr>
+            <th>Reason</th>
+            <th>Priority</th>
+            <th>Participant</th>
+            <th>Channel</th>
+            <th>Conversation</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ticket of tickets">
+            <td>
+              <strong>{{ ticket.reason }}</strong>
+              <p class="comm-muted" *ngIf="ticket.aiSuggestedReply">AI suggested reply available</p>
+            </td>
+            <td><span [class]="'status-badge priority-' + ticket.priority">{{ ticket.priority }}</span></td>
+            <td>{{ participant(ticket) }}</td>
+            <td><span class="channel-badge">{{ channel(ticket) }}</span></td>
+            <td>
+              <a class="text-link" [routerLink]="['/conversations', ticket.conversationId]">
+                {{ displayId(ticket.conversationId) }}
+              </a>
+            </td>
+            <td><span [class]="'status-badge ' + statusClass(ticket.status)">{{ ticket.status }}</span></td>
+            <td>{{ formatDate(ticket.createdAt) }}</td>
+            <td class="queue-actions">
+              <a class="comm-button-secondary" [routerLink]="['/conversations', ticket.conversationId]">View</a>
+              <button
+                class="comm-button"
+                type="button"
+                [disabled]="ticket.status === 'resolved' || resolvingId === (ticket._id || ticket.id)"
+                (click)="resolve(ticket)"
+              >
+                {{ resolvingId === (ticket._id || ticket.id) ? 'Resolving...' : 'Resolve' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

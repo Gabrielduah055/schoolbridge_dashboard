@@ -4,6 +4,9 @@ import { AiAssistantComponent } from './pages/ai-assistant/ai-assistant.componen
 import { AnalyticsComponent } from './pages/analytics/analytics.component';
 import { AnnouncementsComponent } from './pages/announcements/announcements.component';
 import { AttendanceComponent } from './pages/attendance/attendance.component';
+import { BroadcastsComponent } from './pages/broadcasts/broadcasts.component';
+import { ChannelsComponent } from './pages/channels/channels.component';
+import { ClassesComponent } from './pages/classes/classes.component';
 import { ComplaintsComponent } from './pages/complaints/complaints.component';
 import { ConversationsComponent } from './pages/conversations/conversations.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
@@ -13,6 +16,8 @@ import { ExamResultsComponent } from './pages/exam-results/exam-results.componen
 import { FeeManagementComponent } from './pages/fee-management/fee-management.component';
 import { KnowledgeBaseComponent } from './pages/knowledge-base/knowledge-base.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
+import { HandoverQueueComponent } from './pages/handover-queue/handover-queue.component';
+import { ParentsComponent } from './pages/parents/parents.component';
 import { ReportCardsComponent } from './pages/report-cards/report-cards.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { StudentDetailsComponent } from './pages/student-details/student-details.component';
@@ -25,13 +30,20 @@ export const routes: Routes = [
     component: AdminLayoutComponent,
     children: [
       { path: '', component: DashboardComponent },
+      { path: 'overview', redirectTo: '', pathMatch: 'full' },
+      { path: 'conversations', component: ConversationsComponent },
+      { path: 'conversations/:id', component: ConversationsComponent },
+      { path: 'handover-queue', component: HandoverQueueComponent },
+      { path: 'broadcasts', component: BroadcastsComponent },
       { path: 'students', component: StudentsComponent },
       { path: 'students/:id', component: StudentDetailsComponent },
+      { path: 'parents', component: ParentsComponent },
       { path: 'teachers', component: TeachersComponent },
+      { path: 'classes', component: ClassesComponent },
       { path: 'knowledge-base', component: KnowledgeBaseComponent },
-      { path: 'announcements', component: AnnouncementsComponent },
+      { path: 'channels', component: ChannelsComponent },
+      { path: 'announcements', redirectTo: 'broadcasts', pathMatch: 'full' },
       { path: 'email-center', component: EmailCenterComponent },
-      { path: 'conversations', component: ConversationsComponent },
       { path: 'fee-management', component: FeeManagementComponent },
       { path: 'report-cards', component: ReportCardsComponent },
       { path: 'attendance', component: AttendanceComponent },

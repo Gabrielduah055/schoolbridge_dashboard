@@ -1,109 +1,71 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { IconName, getIconPath } from '../../core/navigation';
-
-interface TeacherStat {
-  label: string;
-  value: string;
-  note: string;
-  icon: IconName;
-  tone: string;
-}
+import { Component, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { ApiService, ApiStudent } from '../../core/services/api.service';
 
 interface TeacherRow {
-  initials: string;
   name: string;
-  className: string;
-  subject: string;
+  classes: string[];
+  students: number;
   phone: string;
-  messages: number;
-  status: 'Active' | 'Absent' | 'On Leave';
-  tone: string;
-}
-
-interface CoverageItem {
-  label: string;
-  title: string;
-  subject: string;
-  teacher: string;
-  tone: string;
-}
-
-interface ActivityItem {
-  title: string;
-  meta: string;
-  tone: string;
 }
 
 @Component({
   selector: 'app-teachers-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './teachers.component.html',
   styleUrl: './teachers.component.css'
 })
-export class TeachersComponent {
-  readonly getIconPath = getIconPath;
+export class TeachersComponent implements OnInit {
+  loading = true;
+  error = '';
+  teachers: TeacherRow[] = [];
 
-  readonly stats: TeacherStat[] = [
-    { label: 'Total Teachers', value: '24', note: 'Across 18 classes', icon: 'teachers', tone: 'purple' },
-    { label: 'Active Today', value: '21', note: '3 absent today', icon: 'check', tone: 'emerald' },
-    { label: 'Messages Sent Today', value: '47', note: 'To parents via bot', icon: 'chat', tone: 'blue' },
-    { label: 'Pending Actions', value: '8', note: 'Awaiting parent responses', icon: 'clock', tone: 'amber' }
-  ];
+  constructor(private readonly api: ApiService) {}
 
-  readonly teachers: TeacherRow[] = [
-    { initials: 'KM', name: 'Mr. Kofi Boateng', className: 'Class 4B', subject: 'Mathematics', phone: '+233244XXXXXX', messages: 12, status: 'Active', tone: 'pink' },
-    { initials: 'M', name: 'Mrs. Ama Tetteh', className: 'Class 3A', subject: 'English', phone: '+233557XXXXXX', messages: 8, status: 'Active', tone: 'red' },
-    { initials: 'KM', name: 'Mr. Kwame Asante', className: 'Class 5B', subject: 'Mathematics', phone: '+233244XXXXXX', messages: 7, status: 'Absent', tone: 'pink' },
-    { initials: 'Y', name: 'Mr. Abena Darko', className: 'Class 2B', subject: 'English', phone: '+233777XXXXXX', messages: 6, status: 'Active', tone: 'purple' },
-    { initials: 'Y', name: 'Mrs. Ama Tettko', className: 'Class 4B', subject: 'English', phone: '+233557XXXXXX', messages: 6, status: 'Active', tone: 'emerald' },
-    { initials: 'KM', name: 'Mr. Kofi Boateng', className: 'Class 4B', subject: 'Mathematics', phone: '+233244XXXXXX', messages: 4, status: 'On Leave', tone: 'pink' },
-    { initials: 'M', name: 'Mrs. Ama Tetteh', className: 'Class 3A', subject: 'English', phone: '+233557XXXXXX', messages: 8, status: 'Active', tone: 'red' }
-  ];
+  ngOnInit(): void {
+    this.api.getStudents().subscribe({
+      next: (students) => {
+        this.teachers = this.toTeachers(students);
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load teacher context', err);
+        this.error = 'Could not load teacher context. Check the admin API key in Settings.';
+        this.loading = false;
+      }
+    });
+  }
 
-  readonly chartBars = [
-    { day: 'Mon', value: 34 },
-    { day: 'Tue', value: 52 },
-    { day: 'Wed', value: 68 },
-    { day: 'Thu', value: 42 },
-    { day: 'Fri', value: 63 }
-  ];
+  private toTeachers(students: ApiStudent[]): TeacherRow[] {
+    const rows = new Map<string, TeacherRow>();
+    for (const student of students) {
+      const teacherName = this.text(student, ['teacherName', 'classTeacher', 'teacher.name']);
+      if (!teacherName) continue;
+      const row = rows.get(teacherName) ?? {
+        name: teacherName,
+        classes: [],
+        students: 0,
+        phone: this.text(student, ['teacherPhone', 'teacher.phone'])
+      };
+      const className = this.text(student, ['class', 'className', 'grade']) || 'Unassigned';
+      if (!row.classes.includes(className)) row.classes.push(className);
+      row.students += 1;
+      rows.set(teacherName, row);
+    }
+    return Array.from(rows.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }
 
-  readonly coverage: CoverageItem[] = [
-    { label: '1A', title: 'Class 4B', subject: 'Subject', teacher: 'Teacher Name', tone: 'pink' },
-    { label: '5B', title: 'Class 3A', subject: 'Subject', teacher: 'Teacher Name', tone: 'amber' },
-    { label: '6B', title: 'Class 3A', subject: 'English', teacher: 'Teacher Name', tone: 'blue' }
-  ];
-
-  readonly coverageList = [
-    { initials: 'KM', name: 'Mr. Kofi Boateng', note: 'Admission No', tone: 'pink', alert: true },
-    { initials: 'M', name: 'Mrs. Ama Tetteh', note: 'Admission No', tone: 'blue' },
-    { initials: 'Y', name: 'Abena Boating', note: 'Admission No', tone: 'purple' }
-  ];
-
-  readonly activity: ActivityItem[] = [
-    { title: 'Mr. Akcsua Mathama...', meta: '4 recent activity ago', tone: 'purple' },
-    { title: 'Oct Acraua Methatha...', meta: '4 recent activity ago', tone: 'amber' },
-    { title: 'Oct Batang Activity F...', meta: '4 recent activity ago', tone: 'orange' },
-    { title: 'Teacher follow-up sent', meta: '1 recent activity ago', tone: 'emerald' }
-  ];
-
-  readonly selectedTeacher = {
-    initials: 'KM',
-    name: 'Kofi Mensah',
-    className: 'Class 4B',
-    admissionNo: 'GHS12003',
-    classDetail: '3A',
-    enrolled: '17 Jan 2023',
-    age: 29,
-    guardian: 'Kwame Asante, Shaanta',
-    responseRate: 75,
-    correctionRate: 75,
-    riskRate: 20
-  };
-
-  getStatusClass(status: TeacherRow['status']): string {
-    return status.toLowerCase().replace(' ', '-');
+  private text(source: unknown, keys: string[]): string {
+    for (const key of keys) {
+      const value = key.split('.').reduce<unknown>((target, part) => {
+        if (!target || typeof target !== 'object') return undefined;
+        return (target as Record<string, unknown>)[part];
+      }, source);
+      if (typeof value === 'string' && value.trim()) return value.trim();
+      if (typeof value === 'number') return String(value);
+    }
+    return '';
   }
 }

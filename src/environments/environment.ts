@@ -1,4 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://schoolbridge-backend.onrender.com'
+  apiUrl: 'https://schoolbridge-backend.onrender.com',
+  adminApiKey: ''
 };

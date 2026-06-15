@@ -1,0 +1,53 @@
+:host {
+  display: block;
+}
+
+.draft-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.channel-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--sb-text);
+  font-size: 13px;
+}
+
+.channel-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-message,
+.broadcast-error {
+  margin: 12px 0 0;
+  color: var(--sb-muted);
+  font-size: 13px;
+}
+
+.broadcast-error {
+  padding: 14px 16px;
+  color: var(--sb-danger);
+}
+
+.broadcast-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.channel-badge + .channel-badge {
+  margin-left: 5px;
+}
+
+@media (max-width: 720px) {
+  .draft-heading,
+  .broadcast-actions {
+    display: grid;
+  }
+}

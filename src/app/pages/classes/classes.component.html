@@ -1,0 +1,61 @@
+<section class="comm-page">
+  <div class="comm-grid cols-3">
+    <article class="comm-card metric-card">
+      <span>Classes</span>
+      <strong>{{ loading ? '-' : classes.length }}</strong>
+      <p>Derived from active students</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Students</span>
+      <strong>{{ loading ? '-' : totalStudents }}</strong>
+      <p>Across listed classes</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Parent contacts</span>
+      <strong>{{ loading ? '-' : totalParents }}</strong>
+      <p>Reachable class audiences</p>
+    </article>
+  </div>
+
+  <section class="comm-card">
+    <div class="comm-card-header">
+      <div>
+        <h2>Classes</h2>
+        <p>Communication audiences by class</p>
+      </div>
+      <a class="text-link" routerLink="/broadcasts">Draft broadcast</a>
+    </div>
+
+    <div *ngIf="error" class="simple-error">{{ error }}</div>
+
+    <div *ngIf="!loading && classes.length === 0" class="empty-state">
+      <div>
+        <strong>No classes yet</strong>
+        <p>Classes will appear after students are imported with class names.</p>
+      </div>
+    </div>
+
+    <div class="comm-table-wrap" *ngIf="classes.length > 0">
+      <table class="comm-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Class teacher</th>
+            <th>Students</th>
+            <th>Parent contacts</th>
+            <th>Communication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let classItem of classes">
+            <td><strong>{{ classItem.name }}</strong></td>
+            <td>{{ classItem.teacher }}</td>
+            <td>{{ classItem.students }}</td>
+            <td>{{ classItem.parents }}</td>
+            <td><span class="channel-badge">broadcast audience</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

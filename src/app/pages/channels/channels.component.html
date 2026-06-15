@@ -1,0 +1,153 @@
+<section class="comm-page">
+  <div *ngIf="error" class="comm-card pad channels-error">{{ error }}</div>
+
+  <div class="comm-grid cols-2">
+    <section class="comm-card pad channel-card" *ngIf="telegram; else noTelegram">
+      <div class="channel-card-top">
+        <div>
+          <h2>Telegram</h2>
+          <p>{{ telegram.displayName || telegram.identifier }}</p>
+        </div>
+        <span [class]="'status-badge ' + statusClass(telegram.status)">{{ telegram.status }}</span>
+      </div>
+      <dl class="channel-details">
+        <div>
+          <dt>Provider</dt>
+          <dd>{{ telegram.provider }}</dd>
+        </div>
+        <div>
+          <dt>Identifier</dt>
+          <dd>{{ telegram.identifier }}</dd>
+        </div>
+        <div>
+          <dt>Last inbound</dt>
+          <dd>{{ formatDate(telegram.lastInboundAt) }}</dd>
+        </div>
+        <div>
+          <dt>Last outbound</dt>
+          <dd>{{ formatDate(telegram.lastOutboundAt) }}</dd>
+        </div>
+      </dl>
+      <p class="channel-error" *ngIf="telegram.lastError">{{ telegram.lastError }}</p>
+    </section>
+
+    <ng-template #noTelegram>
+      <section class="comm-card pad channel-card">
+        <div class="channel-card-top">
+          <div>
+            <h2>Telegram</h2>
+            <p>Primary communication channel</p>
+          </div>
+          <span class="status-badge status-disconnected">not connected</span>
+        </div>
+        <div class="empty-state">
+          <div>
+            <strong>Channel not connected</strong>
+            <p>No Telegram account was returned by /api/channel-accounts.</p>
+          </div>
+        </div>
+      </section>
+    </ng-template>
+
+    <section class="comm-card pad channel-card future">
+      <div class="channel-card-top">
+        <div>
+          <h2>WhatsApp</h2>
+          <p>Future connection placeholder</p>
+        </div>
+        <span class="status-badge status-disconnected">future</span>
+      </div>
+      <div class="empty-state">
+        <div>
+          <strong>Channel not connected</strong>
+          <p>WhatsApp connection is intentionally not part of this MVP build.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="comm-card">
+    <div class="comm-card-header">
+      <div>
+        <h2>Delivery Logs</h2>
+        <p>Failed, pending, sent, and received message events</p>
+      </div>
+      <span class="status-badge status-failed">{{ failedOrPendingLogs.length }} failed or pending</span>
+    </div>
+
+    <div *ngIf="!loading && recentLogs.length === 0" class="empty-state">
+      <div>
+        <strong>No failed deliveries</strong>
+        <p>Delivery events will appear here when messages are sent or received.</p>
+      </div>
+    </div>
+
+    <div class="comm-table-wrap" *ngIf="recentLogs.length > 0">
+      <table class="comm-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Channel</th>
+            <th>Provider</th>
+            <th>Event</th>
+            <th>Provider message</th>
+            <th>Error</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of recentLogs">
+            <td><span [class]="'status-badge ' + statusClass(log.status)">{{ log.status }}</span></td>
+            <td><span class="channel-badge">{{ log.channel }}</span></td>
+            <td>{{ log.provider }}</td>
+            <td>{{ log.eventType }}</td>
+            <td>{{ log.providerMessageId || '-' }}</td>
+            <td>{{ log.errorMessage || '-' }}</td>
+            <td>{{ formatDate(log.createdAt) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="comm-card">
+    <div class="comm-card-header">
+      <div>
+        <h2>Webhook Events</h2>
+        <p>Latest inbound provider events</p>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && recentWebhookEvents.length === 0" class="empty-state">
+      <div>
+        <strong>No webhook events</strong>
+        <p>Inbound provider activity will appear here once events are received.</p>
+      </div>
+    </div>
+
+    <div class="comm-table-wrap" *ngIf="recentWebhookEvents.length > 0">
+      <table class="comm-table compact-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Channel</th>
+            <th>Provider</th>
+            <th>Event type</th>
+            <th>Processed</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let event of recentWebhookEvents">
+            <td><span [class]="'status-badge ' + statusClass(event.status)">{{ event.status }}</span></td>
+            <td><span class="channel-badge">{{ event.channel }}</span></td>
+            <td>{{ event.provider }}</td>
+            <td>{{ event.eventType }}</td>
+            <td>{{ formatDate(event.processedAt) }}</td>
+            <td>{{ formatDate(event.createdAt) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>

@@ -1,252 +1,61 @@
-<section class="teachers-page">
-  <div class="teachers-main">
-    <div class="page-heading">
-      <h2>Teachers</h2>
-      <div class="page-actions">
-        <button class="ghost-button" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="getIconPath('upload')" />
-          </svg>
-          Import Excel
-        </button>
-        <button class="primary-button" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add Teacher
-        </button>
-      </div>
-    </div>
-
-    <div class="teacher-stats">
-      <article *ngFor="let stat of stats" [class]="'stat-card tone-' + stat.tone">
-        <span class="stat-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="getIconPath(stat.icon)" />
-          </svg>
-        </span>
-        <div>
-          <p>{{ stat.label }}</p>
-          <strong>{{ stat.value }}</strong>
-          <span>{{ stat.note }}</span>
-        </div>
-      </article>
-    </div>
-
-    <div class="teacher-workspace">
-      <section class="card table-card">
-        <div class="table-toolbar">
-          <h3>All Teachers Table</h3>
-          <label class="inline-search">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path [attr.d]="getIconPath('search')" />
-            </svg>
-            <input type="search" placeholder="Search by name or subject..." />
-          </label>
-          <button type="button">Class</button>
-          <button type="button">Subject</button>
-        </div>
-
-        <div class="teacher-table-wrap">
-          <table class="teacher-table">
-            <thead>
-              <tr>
-                <th><span class="check-box"></span> Teacher</th>
-                <th>Class</th>
-                <th>Subject</th>
-                <th>Phone</th>
-                <th>Messages Sent</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let teacher of teachers">
-                <td>
-                  <div class="teacher-cell">
-                    <span class="check-box"></span>
-                    <span [class]="'avatar tone-' + teacher.tone">{{ teacher.initials }}</span>
-                    <div>
-                      <strong>{{ teacher.name }}</strong>
-                      <span>Admission IID</span>
-                    </div>
-                  </div>
-                </td>
-                <td><span class="class-pill">{{ teacher.className }}</span></td>
-                <td>{{ teacher.subject }}</td>
-                <td>
-                  <span class="phone-cell">{{ teacher.phone }} <b>WA</b></span>
-                </td>
-                <td><strong class="message-count">{{ teacher.messages }}</strong></td>
-                <td><span [class]="'status-pill status-' + getStatusClass(teacher.status)">{{ teacher.status }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="table-footer">
-          <span></span>
-          <div>
-            <button type="button">|&lt;</button>
-            <button type="button">&lt;</button>
-            <button class="active" type="button">2</button>
-            <button type="button">&gt;</button>
-            <button type="button">&gt;|</button>
-          </div>
-        </div>
-      </section>
-
-      <aside class="side-stack">
-        <section class="card selected-card">
-          <div class="selected-header">
-            <span class="avatar large tone-pink">{{ selectedTeacher.initials }}</span>
-            <div>
-              <h3>{{ selectedTeacher.name }}</h3>
-              <span>{{ selectedTeacher.className }}</span>
-            </div>
-          </div>
-
-          <div class="detail-grid">
-            <div>
-              <span>Admission No</span>
-              <strong>{{ selectedTeacher.admissionNo }}</strong>
-            </div>
-            <div>
-              <span>Class</span>
-              <strong>{{ selectedTeacher.classDetail }}</strong>
-            </div>
-          </div>
-
-          <div class="detail-block">
-            <span>Guardian</span>
-            <strong>{{ selectedTeacher.guardian }}</strong>
-          </div>
-
-          <div class="activity-block">
-            <span>Activity</span>
-            <p>75% response rate</p>
-            <p>75% correction rate</p>
-            <p>20% high-priority threads</p>
-            <i><b></b></i>
-          </div>
-
-          <div class="selected-actions">
-            <button class="primary-button compact" type="button">Message Parent</button>
-            <button class="outline-button compact" type="button">View Conversations</button>
-          </div>
-        </section>
-
-        <section class="card coverage-list-card">
-          <h3>Class Coverage</h3>
-          <div class="coverage-list">
-            <article *ngFor="let item of coverageList">
-              <span [class]="'avatar tone-' + item.tone">{{ item.initials }}</span>
-              <div>
-                <strong>{{ item.name }}</strong>
-                <p>{{ item.note }}</p>
-              </div>
-              <b [class.alert]="item.alert"></b>
-            </article>
-          </div>
-          <div class="amber-alert">
-            <strong>!</strong>
-            Amber alert
-          </div>
-        </section>
-      </aside>
-    </div>
-
-    <div class="bottom-grid">
-      <section class="card chart-card">
-        <div class="section-heading">
-          <h3>Message Activity Chart</h3>
-          <p>Messages sent this week</p>
-        </div>
-        <div class="chart-area">
-          <span class="grid-line line-80">80</span>
-          <span class="grid-line line-60">60</span>
-          <span class="grid-line line-40">40</span>
-          <span class="grid-line line-20">20</span>
-          <div class="bar-row">
-            <div *ngFor="let bar of chartBars" class="bar-item">
-              <span [style.height.%]="bar.value"></span>
-              <strong>{{ bar.day }}</strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card coverage-card">
-        <h3>Class Coverage</h3>
-        <div class="coverage-mini-list">
-          <article *ngFor="let item of coverage" [class]="'coverage-item tone-' + item.tone">
-            <span>{{ item.label }}</span>
-            <div>
-              <strong>{{ item.title }}</strong>
-              <p>{{ item.teacher }}</p>
-            </div>
-            <b>{{ item.subject }}</b>
-            <i></i>
-          </article>
-        </div>
-      </section>
-    </div>
+<section class="comm-page">
+  <div class="comm-grid cols-3">
+    <article class="comm-card metric-card">
+      <span>Teachers</span>
+      <strong>{{ loading ? '-' : teachers.length }}</strong>
+      <p>Derived from student/class records</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Class coverage</span>
+      <strong>{{ loading ? '-' : teachers.length }}</strong>
+      <p>Teacher records with class references</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Messages</span>
+      <strong>-</strong>
+      <p>Use Conversations for live threads</p>
+    </article>
   </div>
 
-  <aside class="teacher-profile-panel">
-    <button class="close-button" type="button" aria-label="Close teacher profile">x</button>
-    <div class="profile-top">
-      <span class="profile-avatar">{{ selectedTeacher.initials }}</span>
-      <h3>{{ selectedTeacher.name }}</h3>
-      <p>{{ selectedTeacher.className }}</p>
+  <section class="comm-card">
+    <div class="comm-card-header">
+      <div>
+        <h2>Teachers</h2>
+        <p>Teaching staff context available to communication workflows</p>
+      </div>
+      <a class="text-link" routerLink="/conversations">View conversations</a>
     </div>
 
-    <div class="profile-grid">
+    <div *ngIf="error" class="simple-error">{{ error }}</div>
+
+    <div *ngIf="!loading && teachers.length === 0" class="empty-state">
       <div>
-        <span>Admission No</span>
-        <strong>{{ selectedTeacher.admissionNo }}</strong>
-      </div>
-      <div>
-        <span>Class</span>
-        <strong>{{ selectedTeacher.classDetail }}</strong>
-      </div>
-      <div>
-        <span>Date Enrolled</span>
-        <strong>{{ selectedTeacher.enrolled }}</strong>
-      </div>
-      <div>
-        <span>Age</span>
-        <strong>{{ selectedTeacher.age }}</strong>
+        <strong>No teacher records yet</strong>
+        <p>The current backend does not expose a teacher list route. Add teacher names to class/student records to populate this view.</p>
       </div>
     </div>
 
-    <div class="profile-activity">
-      <span>Activity</span>
-      <strong>{{ selectedTeacher.responseRate }}% response rate</strong>
-      <div class="profile-actions">
-        <button class="primary-button compact" type="button">Profile</button>
-        <button class="outline-button compact" type="button">Actions</button>
-      </div>
+    <div class="comm-table-wrap" *ngIf="teachers.length > 0">
+      <table class="comm-table">
+        <thead>
+          <tr>
+            <th>Teacher</th>
+            <th>Classes</th>
+            <th>Students</th>
+            <th>Phone</th>
+            <th>Communication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let teacher of teachers">
+            <td><strong>{{ teacher.name }}</strong></td>
+            <td>{{ teacher.classes.join(', ') }}</td>
+            <td>{{ teacher.students }}</td>
+            <td>{{ teacher.phone || '-' }}</td>
+            <td><span class="channel-badge">teacher context</span></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-
-    <div class="profile-tabs">
-      <button class="active" type="button">Profile</button>
-      <button type="button">Messages</button>
-      <button type="button">Classes</button>
-      <button type="button">Message Log</button>
-    </div>
-
-    <section class="recent-card">
-      <h3>Recent Activity</h3>
-      <div class="recent-list">
-        <article *ngFor="let item of activity" [class]="'recent-item tone-' + item.tone">
-          <span></span>
-          <div>
-            <strong>{{ item.title }}</strong>
-            <p>{{ item.meta }}</p>
-          </div>
-        </article>
-      </div>
-      <button type="button">View read activity</button>
-    </section>
-  </aside>
+  </section>
 </section>

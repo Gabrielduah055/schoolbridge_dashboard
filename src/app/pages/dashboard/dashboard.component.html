@@ -1,213 +1,125 @@
-<section class="content-grid">
+<section class="comm-page overview-page">
+  <div *ngIf="error" class="comm-card pad error-panel">{{ error }}</div>
 
-  <!-- ── Stat cards ──────────────────────────────────────────────────── -->
-  <div *ngFor="let stat of stats" [class]="'stat-card card tone-' + stat.tone">
-    <div class="stat-icon">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path [attr.d]="getIconPath(stat.icon)" />
-      </svg>
-    </div>
-    <div>
-      <p class="label">{{ stat.label }}</p>
-      <strong>{{ stat.display }}</strong>
-      <span class="change">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="getIconPath('arrowUp')" />
-        </svg>
-        {{ stat.change }}
-      </span>
-    </div>
+  <div class="comm-grid metrics-grid">
+    <article class="comm-card metric-card" *ngFor="let metric of metrics">
+      <span>{{ metric.label }}</span>
+      <strong>{{ loading ? '-' : metric.value }}</strong>
+      <p>{{ metric.note }}</p>
+    </article>
   </div>
 
-  <!-- ── Attendance Overview ─────────────────────────────────────────── -->
-  <section class="card attendance-card">
-    <div class="card-heading">
-      <div>
-        <h2>Attendance Overview</h2>
-        <p>Attendance This Week</p>
-      </div>
-      <a [routerLink]="['/attendance']">View All</a>
-    </div>
-
-    <div class="attendance-body">
-      <div class="donut" aria-label="89 percent attendance">
-        <div class="donut-center">
-          <strong>89%</strong>
-        </div>
-      </div>
-
-      <div class="attendance-list">
-        <div class="attendance-row" *ngFor="let row of attendanceRows">
-          <div>
-            <span>{{ row.label }}</span>
-            <strong>{{ row.className }} - {{ row.percent }}%</strong>
-          </div>
-          <div class="progress-track">
-            <span [class]="'progress-fill tone-' + row.tone" [style.width.%]="row.percent"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── Recent Announcements ────────────────────────────────────────── -->
-  <section class="card announcements-card">
-    <div class="card-heading">
-      <div>
-        <h2>Recent Announcements</h2>
-        <p>Latest school broadcasts</p>
-      </div>
-      <button type="button" class="primary-button" [routerLink]="['/announcements']">Send New</button>
-    </div>
-
-    <div class="announcement-list">
-      <article class="announcement-item" *ngFor="let announcement of announcements">
-        <span [class]="'dot tone-' + announcement.tone"></span>
+  <div class="comm-grid cols-2">
+    <section class="comm-card channel-status-card">
+      <div class="comm-card-header">
         <div>
-          <strong>{{ announcement.title }}</strong>
-          <p>{{ announcement.target }}</p>
+          <h2>Telegram Status</h2>
+          <p>Primary live communication channel</p>
         </div>
-        <span>{{ announcement.time }}</span>
-        <span>{{ announcement.rate }}</span>
-      </article>
-    </div>
-
-    <a class="card-link" [routerLink]="['/announcements']">View all announcements →</a>
-  </section>
-
-  <!-- ── Quick Actions ───────────────────────────────────────────────── -->
-  <section class="card actions-card">
-    <div class="card-heading">
-      <div>
-        <h2>Quick Actions</h2>
-        <p>Common admin tasks</p>
-      </div>
-    </div>
-
-    <div class="action-grid">
-      <a
-        *ngFor="let action of actions"
-        [class]="'action-button tone-' + action.tone"
-        [routerLink]="[action.route]"
-        role="button"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="getIconPath(action.icon)" />
-        </svg>
-        <span>{{ action.label }}</span>
-      </a>
-    </div>
-  </section>
-
-  <!-- ── Fee Collection ──────────────────────────────────────────────── -->
-  <section class="card fee-card">
-    <div class="card-heading">
-      <div>
-        <h2>Fee Collection - Term 2 2026</h2>
-        <p>Class payment progress</p>
-      </div>
-    </div>
-
-    <!-- Loading state -->
-    <div *ngIf="feeLoading" class="fee-loading">
-      <p>Loading fee data…</p>
-    </div>
-
-    <!-- Error state -->
-    <div *ngIf="!feeLoading && feeError" class="fee-error">
-      <p>Could not load fee data. Check your connection.</p>
-    </div>
-
-    <!-- No fee data yet (students exist but no term fees recorded) -->
-    <div *ngIf="!feeLoading && !feeError && feeSummary.target === '—'" class="fee-empty">
-      <p>No fee records found. Add term fee amounts when enrolling students.</p>
-    </div>
-
-    <!-- Live fee data -->
-    <ng-container *ngIf="!feeLoading && !feeError && feeSummary.target !== '—'">
-      <div class="fee-progress">
-        <div class="fee-bar" [style.--fee-pct]="feeSummary.percent + '%'">
-          <span>{{ feeSummary.percent }}%</span>
-        </div>
-        <p>
-          <strong>{{ feeSummary.collected }}</strong>
-          collected of {{ feeSummary.target }} target
-        </p>
-      </div>
-
-      <div class="fee-table-wrap" *ngIf="feeRows.length > 0">
-        <table class="fee-table">
-          <thead>
-            <tr>
-              <th>Class</th>
-              <th>Students</th>
-              <th>Paid</th>
-              <th>Outstanding</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of feeRows">
-              <td>{{ row.className }}</td>
-              <td>{{ row.students }}</td>
-              <td>{{ row.paid }}</td>
-              <td>{{ row.outstanding }}</td>
-              <td>
-                <span [class]="'status-badge status-' + row.status.toLowerCase()">{{ row.status }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </ng-container>
-  </section>
-
-  <!-- ── AI Insights ─────────────────────────────────────────────────── -->
-  <section class="card insight-card">
-    <div class="card-heading">
-      <div>
-        <h2>AI Insights</h2>
-        <p>Generated from school activity</p>
-      </div>
-    </div>
-
-    <div class="insight-list">
-      <article *ngFor="let insight of insights" [class]="'insight-item tone-' + insight.tone">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path [attr.d]="getIconPath(insight.icon)" />
-        </svg>
-        <div>
-          <strong>{{ insight.text }}</strong>
-          <p>{{ insight.action }}</p>
-        </div>
-      </article>
-    </div>
-
-    <button class="ask-ai-button" type="button" [routerLink]="['/ai-assistant']">Ask AI Assistant →</button>
-  </section>
-
-  <!-- ── Recent Activity ─────────────────────────────────────────────── -->
-  <section class="card activity-card">
-    <div class="card-heading">
-      <div>
-        <h2>Recent Activity</h2>
-        <p>Live administrative timeline</p>
-      </div>
-    </div>
-
-    <div class="activity-timeline">
-      <article class="activity-item" *ngFor="let activity of activities">
-        <span [class]="'activity-icon tone-' + activity.tone">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path [attr.d]="getIconPath(activity.icon)" />
-          </svg>
+        <span [class]="'status-badge ' + statusClass(telegramStatus?.status)">
+          {{ telegramStatus?.status || 'not connected' }}
         </span>
+      </div>
+      <div class="channel-status-body" *ngIf="telegramStatus; else noTelegram">
         <div>
-          <strong>{{ activity.text }}</strong>
-          <p>{{ activity.time }}</p>
+          <span>Provider</span>
+          <strong>{{ telegramStatus.provider }}</strong>
         </div>
-      </article>
-    </div>
-  </section>
+        <div>
+          <span>Account</span>
+          <strong>{{ telegramStatus.displayName || telegramStatus.identifier }}</strong>
+        </div>
+        <div>
+          <span>Last inbound</span>
+          <strong>{{ formatDate(telegramStatus.lastInboundAt) }}</strong>
+        </div>
+        <div>
+          <span>Last outbound</span>
+          <strong>{{ formatDate(telegramStatus.lastOutboundAt) }}</strong>
+        </div>
+      </div>
+      <ng-template #noTelegram>
+        <div class="empty-state">
+          <div>
+            <strong>Channel not connected</strong>
+            <p>No Telegram account has been returned by the backend yet.</p>
+          </div>
+        </div>
+      </ng-template>
+    </section>
 
+    <section class="comm-card channel-status-card muted">
+      <div class="comm-card-header">
+        <div>
+          <h2>WhatsApp Status</h2>
+          <p>Placeholder for the future WhatsApp connection</p>
+        </div>
+        <span class="status-badge status-disconnected">future</span>
+      </div>
+      <div class="empty-state">
+        <div>
+          <strong>Channel not connected</strong>
+          <p>WhatsApp is intentionally shown as a future communication channel.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="comm-grid cols-2">
+    <section class="comm-card">
+      <div class="comm-card-header">
+        <div>
+          <h2>Recent Conversations</h2>
+          <p>Latest shared inbox activity</p>
+        </div>
+        <a class="text-link" routerLink="/conversations">Open inbox</a>
+      </div>
+
+      <div *ngIf="!loading && recentConversations.length === 0" class="empty-state">
+        <div>
+          <strong>No conversations yet</strong>
+          <p>New Telegram or WhatsApp conversations will appear here.</p>
+        </div>
+      </div>
+
+      <div class="overview-list" *ngIf="recentConversations.length > 0">
+        <a class="overview-list-item" *ngFor="let conversation of recentConversations" [routerLink]="['/conversations', conversation._id || conversation.id]">
+          <div>
+            <strong>{{ conversation.participantName || 'Unknown participant' }}</strong>
+            <p>{{ conversation.participantRole }} via {{ conversation.channel }}</p>
+          </div>
+          <span [class]="'status-badge ' + statusClass(conversation.status)">{{ conversation.status }}</span>
+          <time>{{ formatDate(conversation.lastMessageAt || conversation.updatedAt) }}</time>
+        </a>
+      </div>
+    </section>
+
+    <section class="comm-card">
+      <div class="comm-card-header">
+        <div>
+          <h2>Recent Handover Tickets</h2>
+          <p>Human attention queue</p>
+        </div>
+        <a class="text-link" routerLink="/handover-queue">View queue</a>
+      </div>
+
+      <div *ngIf="!loading && recentHandovers.length === 0" class="empty-state">
+        <div>
+          <strong>No handover tickets</strong>
+          <p>AI escalations and admin requests will appear here.</p>
+        </div>
+      </div>
+
+      <div class="overview-list" *ngIf="recentHandovers.length > 0">
+        <article class="overview-list-item" *ngFor="let ticket of recentHandovers">
+          <div>
+            <strong>{{ ticket.reason }}</strong>
+            <p>Conversation {{ displayId(ticket.conversationId) }}</p>
+          </div>
+          <span [class]="'status-badge priority-' + ticket.priority">{{ ticket.priority }}</span>
+          <time>{{ formatDate(ticket.createdAt) }}</time>
+        </article>
+      </div>
+    </section>
+  </div>
 </section>
