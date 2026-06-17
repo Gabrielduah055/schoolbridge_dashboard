@@ -103,8 +103,9 @@
           </p>
         </div>
         <div class="thread-actions">
-          <button class="comm-button-secondary" type="button" disabled>Assign</button>
-          <button class="comm-button-secondary" type="button" disabled>Resolve</button>
+          <button class="comm-button-secondary" type="button" *ngIf="hasPermission('conversations:assign')" [disabled]="runningAction" (click)="markNeedsHuman()">Needs Human</button>
+          <button class="comm-button-secondary" type="button" *ngIf="hasPermission('conversations:resolve')" [disabled]="runningAction" (click)="reopenSelected()">Reopen</button>
+          <button class="comm-button" type="button" *ngIf="hasPermission('conversations:resolve')" [disabled]="runningAction" (click)="resolveSelected()">Resolve</button>
         </div>
       </div>
 
@@ -151,14 +152,19 @@
 
       <div class="thread-workbench">
         <label>
-          <span>Internal notes</span>
-          <textarea disabled placeholder="Internal notes placeholder"></textarea>
+          <span>Assign conversation</span>
+          <input [(ngModel)]="assigningTo" placeholder="Admin name" />
+          <button class="comm-button-secondary" type="button" *ngIf="hasPermission('conversations:assign')" [disabled]="runningAction || !assigningTo.trim()" (click)="assignSelected()">Assign</button>
         </label>
         <label>
-          <span>Reply box</span>
-          <textarea disabled placeholder="Reply composer placeholder"></textarea>
+          <span>Reply through Telegram</span>
+          <textarea [(ngModel)]="replyText" placeholder="Type a manual admin reply..."></textarea>
+          <button class="comm-button" type="button" *ngIf="hasPermission('conversations:reply')" [disabled]="sendingReply || !replyText.trim()" (click)="sendReply()">
+            {{ sendingReply ? 'Sending...' : 'Send reply' }}
+          </button>
         </label>
       </div>
+      <p class="action-message" *ngIf="actionMessage">{{ actionMessage }}</p>
     </section>
 
     <ng-template #noSelection>

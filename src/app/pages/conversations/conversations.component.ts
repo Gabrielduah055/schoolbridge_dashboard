@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ApiService, Conversation, Message } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-conversations-page',
@@ -17,6 +18,11 @@ export class ConversationsComponent implements OnInit, OnDestroy {
   messagesLoading = false;
   error = '';
   messageError = '';
+  actionMessage = '';
+  replyText = '';
+  assigningTo = '';
+  sendingReply = false;
+  runningAction = false;
   selectedConversationId = '';
   messages: Message[] = [];
 
@@ -33,6 +39,7 @@ export class ConversationsComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly api: ApiService,
+    private readonly auth: AuthService,
     private readonly route: ActivatedRoute,
     private readonly router: Router
   ) {}
@@ -91,6 +98,74 @@ export class ConversationsComponent implements OnInit, OnDestroy {
     this.filters = { channel: '', role: '', status: '', handover: '', search: '' };
   }
 
+  hasPermission(permission: string): boolean {
+    return this.auth.hasPermission(permission);
+  }
+
+  sendReply(): void {
+    const conversation = this.selectedConversation;
+    const id = conversation ? this.conversationId(conversation) : '';
+    const body = this.replyText.trim();
+    if (!id || !body || this.sendingReply) return;
+
+    this.sendingReply = true;
+    this.actionMessage = 'Sending reply...';
+    this.api.replyToConversation(id, body).subscribe({
+      next: () => {
+        this.replyText = '';
+        this.actionMessage = 'Reply sent through Telegram.';
+        this.sendingReply = false;
+        this.loadMessages(id);
+        this.loadConversations();
+      },
+      error: (err) => {
+        console.error('Failed to send reply', err);
+        this.actionMessage = 'Could not send the reply.';
+        this.sendingReply = false;
+      }
+    });
+  }
+
+  assignSelected(): void {
+    const conversation = this.selectedConversation;
+    const id = conversation ? this.conversationId(conversation) : '';
+    const assignedTo = this.assigningTo.trim();
+    if (!id || !assignedTo || this.runningAction) return;
+
+    this.runConversationAction(() => this.api.assignConversation(id, assignedTo), id, 'Conversation assigned.');
+  }
+
+  resolveSelected(): void {
+    const id = this.selectedConversation ? this.conversationId(this.selectedConversation) : '';
+    if (!id || this.runningAction) return;
+    this.runConversationAction(() => this.api.resolveConversation(id), id, 'Conversation resolved.');
+  }
+
+  reopenSelected(): void {
+    const id = this.selectedConversation ? this.conversationId(this.selectedConversation) : '';
+    if (!id || this.runningAction) return;
+    this.runConversationAction(() => this.api.reopenConversation(id), id, 'Conversation reopened.');
+  }
+
+  markNeedsHuman(): void {
+    const id = this.selectedConversation ? this.conversationId(this.selectedConversation) : '';
+    if (!id || this.runningAction) return;
+    this.runningAction = true;
+    this.actionMessage = 'Creating handover ticket...';
+    this.api.markConversationNeedsHuman(id).subscribe({
+      next: () => {
+        this.runningAction = false;
+        this.actionMessage = 'Conversation marked for human attention.';
+        this.loadConversations();
+      },
+      error: (err) => {
+        console.error('Failed to mark conversation needs human', err);
+        this.runningAction = false;
+        this.actionMessage = 'Could not mark this conversation.';
+      }
+    });
+  }
+
   conversationId(conversation: Conversation): string {
     return conversation._id || conversation.id || '';
   }
@@ -133,6 +208,24 @@ export class ConversationsComponent implements OnInit, OnDestroy {
         console.error('Failed to load conversations', err);
         this.error = 'Could not load conversations. Check the admin API key in Settings.';
         this.loading = false;
+      }
+    });
+  }
+
+  private runConversationAction(request: () => ReturnType<ApiService['resolveConversation']>, id: string, success: string): void {
+    this.runningAction = true;
+    this.actionMessage = 'Updating conversation...';
+    request().subscribe({
+      next: () => {
+        this.runningAction = false;
+        this.actionMessage = success;
+        this.loadConversations();
+        this.loadMessages(id);
+      },
+      error: (err) => {
+        console.error('Conversation action failed', err);
+        this.runningAction = false;
+        this.actionMessage = 'Could not update this conversation.';
       }
     });
   }

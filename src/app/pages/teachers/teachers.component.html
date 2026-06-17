@@ -3,7 +3,7 @@
     <article class="comm-card metric-card">
       <span>Teachers</span>
       <strong>{{ loading ? '-' : teachers.length }}</strong>
-      <p>Derived from student/class records</p>
+      <p>{{ sourceLabel }}</p>
     </article>
     <article class="comm-card metric-card">
       <span>Class coverage</span>
@@ -43,16 +43,20 @@
             <th>Classes</th>
             <th>Students</th>
             <th>Phone</th>
+            <th>Email</th>
             <th>Communication</th>
+            <th>Last conversation</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let teacher of teachers">
             <td><strong>{{ teacher.name }}</strong></td>
             <td>{{ teacher.classes.join(', ') }}</td>
-            <td>{{ teacher.students }}</td>
+            <td>{{ teacher.students || '-' }}</td>
             <td>{{ teacher.phone || '-' }}</td>
-            <td><span class="channel-badge">teacher context</span></td>
+            <td>{{ teacher.email || '-' }}</td>
+            <td><span class="channel-badge">{{ teacher.channelIdentityStatus }}</span></td>
+            <td>{{ formatDate(teacher.lastConversationAt) }}</td>
           </tr>
         </tbody>
       </table>

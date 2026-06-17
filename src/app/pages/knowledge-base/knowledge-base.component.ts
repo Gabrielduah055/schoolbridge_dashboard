@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IconName, getIconPath } from '../../core/navigation';
 import { ApiKnowledgeItem, ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 interface KnowledgeStat {
   kicker: string;
@@ -158,7 +159,10 @@ export class KnowledgeBaseComponent implements OnInit, OnDestroy {
 
   chat: ChatMessage[] = [...fallbackChat];
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private readonly auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.restoreChatState();
@@ -173,6 +177,10 @@ export class KnowledgeBaseComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     this.selectedFile = input.files?.[0] ?? null;
     this.uploadMessage = this.selectedFile ? `${this.selectedFile.name} ready to upload.` : '';
+  }
+
+  openKnowledgeFilePicker(): void {
+    document.getElementById('knowledge-file-input')?.click();
   }
 
   uploadKnowledge(): void {
@@ -200,6 +208,10 @@ export class KnowledgeBaseComponent implements OnInit, OnDestroy {
         this.uploadMessage = this.extractError(err) || 'Upload failed. Please try again.';
       }
     });
+  }
+
+  hasPermission(permission: string): boolean {
+    return this.auth.hasPermission(permission);
   }
 
   sendTestMessage(): void {

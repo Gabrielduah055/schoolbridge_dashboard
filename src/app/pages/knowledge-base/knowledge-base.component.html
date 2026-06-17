@@ -32,7 +32,7 @@
             <h2>Document Library</h2>
             <p>Uploaded Documents</p>
           </div>
-          <button class="text-action" type="button" (click)="knowledgeFile.click()">Upload New +</button>
+          <button class="text-action" type="button" *ngIf="hasPermission('knowledge:manage')" (click)="openKnowledgeFilePicker()">Upload New +</button>
         </div>
 
         <div *ngIf="loading" class="library-state">
@@ -159,10 +159,11 @@
   </div>
 
   <aside class="control-panel">
-    <section class="upload-card">
+    <section class="upload-card" *ngIf="hasPermission('knowledge:manage')">
       <h2>Upload Document</h2>
       <input
         #knowledgeFile
+        id="knowledge-file-input"
         type="file"
         accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls"
         hidden

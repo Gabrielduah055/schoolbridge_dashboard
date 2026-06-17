@@ -24,6 +24,10 @@
   gap: 8px;
 }
 
+.channel-placeholder {
+  color: var(--sb-muted);
+}
+
 .action-message,
 .broadcast-error {
   margin: 12px 0 0;

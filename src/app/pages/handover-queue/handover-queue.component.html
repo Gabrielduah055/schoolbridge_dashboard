@@ -53,6 +53,8 @@
             <td>
               <strong>{{ ticket.reason }}</strong>
               <p class="comm-muted" *ngIf="ticket.aiSuggestedReply">AI suggested reply available</p>
+              <p class="comm-muted" *ngIf="ticket.assignedTo">Assigned to {{ ticket.assignedTo }}</p>
+              <p class="comm-muted" *ngIf="ticket.notes?.length">{{ ticket.notes?.length }} note{{ ticket.notes?.length === 1 ? '' : 's' }}</p>
             </td>
             <td><span [class]="'status-badge priority-' + ticket.priority">{{ ticket.priority }}</span></td>
             <td>{{ participant(ticket) }}</td>
@@ -66,9 +68,12 @@
             <td>{{ formatDate(ticket.createdAt) }}</td>
             <td class="queue-actions">
               <a class="comm-button-secondary" [routerLink]="['/conversations', ticket.conversationId]">View</a>
+              <button class="comm-button-secondary" type="button" *ngIf="hasPermission('handovers:assign')" [disabled]="actionId === (ticket._id || ticket.id)" (click)="assign(ticket)">Assign</button>
+              <button class="comm-button-secondary" type="button" *ngIf="hasPermission('handovers:assign')" [disabled]="actionId === (ticket._id || ticket.id)" (click)="addNote(ticket)">Note</button>
               <button
                 class="comm-button"
                 type="button"
+                *ngIf="hasPermission('handovers:resolve')"
                 [disabled]="ticket.status === 'resolved' || resolvingId === (ticket._id || ticket.id)"
                 (click)="resolve(ticket)"
               >

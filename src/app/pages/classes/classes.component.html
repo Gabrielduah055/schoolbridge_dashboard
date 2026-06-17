@@ -3,7 +3,7 @@
     <article class="comm-card metric-card">
       <span>Classes</span>
       <strong>{{ loading ? '-' : classes.length }}</strong>
-      <p>Derived from active students</p>
+      <p>{{ sourceLabel }}</p>
     </article>
     <article class="comm-card metric-card">
       <span>Students</span>
@@ -43,6 +43,7 @@
             <th>Class teacher</th>
             <th>Students</th>
             <th>Parent contacts</th>
+            <th>Broadcasts</th>
             <th>Communication</th>
           </tr>
         </thead>
@@ -52,6 +53,7 @@
             <td>{{ classItem.teacher }}</td>
             <td>{{ classItem.students }}</td>
             <td>{{ classItem.parents }}</td>
+            <td>{{ classItem.recentBroadcasts }}</td>
             <td><span class="channel-badge">broadcast audience</span></td>
           </tr>
         </tbody>
