@@ -1,13 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ApiService, ApiStudent } from '../../core/services/api.service';
+import { ApiService, ApiStudent, TeacherDirectoryRow } from '../../core/services/api.service';
 
 interface TeacherRow {
   name: string;
   classes: string[];
   students: number;
   phone: string;
+  email: string;
+  subject: string;
+  channelIdentityStatus: string;
+  lastConversationAt: string | null;
 }
 
 @Component({
@@ -20,11 +24,42 @@ interface TeacherRow {
 export class TeachersComponent implements OnInit {
   loading = true;
   error = '';
+  sourceLabel = 'Teacher directory';
   teachers: TeacherRow[] = [];
 
   constructor(private readonly api: ApiService) {}
 
   ngOnInit(): void {
+    this.loadTeachers();
+  }
+
+  formatDate(value?: string | null): string {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  private loadTeachers(): void {
+    this.api.getTeachers().subscribe({
+      next: (teachers) => {
+        if (teachers.length > 0) {
+          this.teachers = teachers.map((teacher) => this.fromDirectory(teacher));
+          this.loading = false;
+          return;
+        }
+        this.loadFromStudents('');
+      },
+      error: (err) => {
+        console.error('Failed to load teacher directory', err);
+        this.loadFromStudents('Could not load teacher directory. Showing student/class fallback.');
+      }
+    });
+  }
+
+  private loadFromStudents(message: string): void {
+    this.sourceLabel = 'Student/class fallback';
+    this.error = message;
     this.api.getStudents().subscribe({
       next: (students) => {
         this.teachers = this.toTeachers(students);
@@ -38,6 +73,19 @@ export class TeachersComponent implements OnInit {
     });
   }
 
+  private fromDirectory(teacher: TeacherDirectoryRow): TeacherRow {
+    return {
+      name: teacher.name || 'Teacher',
+      classes: teacher.assignedClasses,
+      students: 0,
+      phone: teacher.phone,
+      email: teacher.email,
+      subject: teacher.subject,
+      channelIdentityStatus: teacher.channelIdentityStatus,
+      lastConversationAt: teacher.lastConversationAt
+    };
+  }
+
   private toTeachers(students: ApiStudent[]): TeacherRow[] {
     const rows = new Map<string, TeacherRow>();
     for (const student of students) {
@@ -47,7 +95,11 @@ export class TeachersComponent implements OnInit {
         name: teacherName,
         classes: [],
         students: 0,
-        phone: this.text(student, ['teacherPhone', 'teacher.phone'])
+        phone: this.text(student, ['teacherPhone', 'teacher.phone']),
+        email: this.text(student, ['teacherEmail', 'teacher.email']),
+        subject: '',
+        channelIdentityStatus: 'unknown',
+        lastConversationAt: null
       };
       const className = this.text(student, ['class', 'className', 'grade']) || 'Unassigned';
       if (!row.classes.includes(className)) row.classes.push(className);

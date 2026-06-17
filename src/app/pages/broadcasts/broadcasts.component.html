@@ -23,7 +23,7 @@
         <h2 class="comm-section-title">Draft Broadcast</h2>
         <p class="comm-muted">Create a simple admin broadcast draft for approval and sending.</p>
       </div>
-      <button class="comm-button" type="button" [disabled]="saving" (click)="createDraft()">
+      <button class="comm-button" type="button" *ngIf="hasPermission('broadcasts:create')" [disabled]="saving" (click)="createDraft()">
         {{ saving ? 'Creating...' : 'Create draft' }}
       </button>
     </div>
@@ -40,8 +40,16 @@
           <option value="parents">Parents</option>
           <option value="teachers">Teachers</option>
           <option value="class">Class</option>
-          <option value="individual">Individual</option>
+          <option value="individual_parent">Individual parent</option>
         </select>
+      </label>
+      <label class="comm-field" *ngIf="requiresClass">
+        <span>Class name</span>
+        <input [(ngModel)]="draft.targetClass" placeholder="e.g. Basic 4" />
+      </label>
+      <label class="comm-field" *ngIf="requiresRecipientPhone">
+        <span>Recipient phone</span>
+        <input [(ngModel)]="draft.recipientPhone" placeholder="e.g. 233..." />
       </label>
       <label class="comm-field full">
         <span>Message</span>
@@ -49,7 +57,7 @@
       </label>
       <div class="channel-checks">
         <label><input type="checkbox" [(ngModel)]="draft.telegram" /> Telegram</label>
-        <label><input type="checkbox" [(ngModel)]="draft.whatsapp" /> WhatsApp future</label>
+        <span class="channel-placeholder">WhatsApp connection is not enabled yet</span>
       </div>
     </div>
 
@@ -95,7 +103,7 @@
               <p class="comm-muted">{{ broadcast.draftedText || broadcast.originalText }}</p>
             </td>
             <td><span [class]="'status-badge ' + statusClass(broadcast.approvalStatus)">{{ broadcast.approvalStatus }}</span></td>
-            <td>{{ broadcast.audienceType }}</td>
+            <td>{{ audienceLabel(broadcast) }}</td>
             <td>
               <span class="channel-badge" *ngFor="let channel of broadcast.channels">{{ channel }}</span>
             </td>
@@ -104,8 +112,8 @@
             <td>{{ deliverySummary(broadcast) }}</td>
             <td>{{ formatDate(broadcast.createdAt) }}</td>
             <td class="broadcast-actions">
-              <button class="comm-button-secondary" type="button" [disabled]="broadcast.approvalStatus === 'approved' || actionId === broadcastId(broadcast)" (click)="approve(broadcast)">Approve</button>
-              <button class="comm-button" type="button" [disabled]="broadcast.approvalStatus !== 'approved' || broadcast.status === 'sent' || actionId === broadcastId(broadcast)" (click)="send(broadcast)">Send</button>
+              <button class="comm-button-secondary" type="button" *ngIf="hasPermission('broadcasts:approve')" [disabled]="broadcast.approvalStatus === 'approved' || actionId === broadcastId(broadcast)" (click)="approve(broadcast)">Approve</button>
+              <button class="comm-button" type="button" *ngIf="hasPermission('broadcasts:send')" [disabled]="broadcast.approvalStatus !== 'approved' || broadcast.status === 'sent' || actionId === broadcastId(broadcast)" (click)="send(broadcast)">Send</button>
             </td>
           </tr>
         </tbody>

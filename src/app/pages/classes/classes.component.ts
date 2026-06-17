@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ApiService, ApiStudent } from '../../core/services/api.service';
+import { ApiService, ApiStudent, ClassDirectoryRow } from '../../core/services/api.service';
 
 interface ClassRow {
   name: string;
   students: number;
   parents: number;
   teacher: string;
+  recentBroadcasts: number;
 }
 
 @Component({
@@ -20,6 +21,7 @@ interface ClassRow {
 export class ClassesComponent implements OnInit {
   loading = true;
   error = '';
+  sourceLabel = 'Class directory';
   classes: ClassRow[] = [];
 
   constructor(private readonly api: ApiService) {}
@@ -33,6 +35,29 @@ export class ClassesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadClasses();
+  }
+
+  private loadClasses(): void {
+    this.api.getClasses().subscribe({
+      next: (classes) => {
+        if (classes.length > 0) {
+          this.classes = classes.map((classItem) => this.fromDirectory(classItem));
+          this.loading = false;
+          return;
+        }
+        this.loadFromStudents('');
+      },
+      error: (err) => {
+        console.error('Failed to load class directory', err);
+        this.loadFromStudents('Could not load class directory. Showing student fallback.');
+      }
+    });
+  }
+
+  private loadFromStudents(message: string): void {
+    this.sourceLabel = 'Student fallback';
+    this.error = message;
     this.api.getStudents().subscribe({
       next: (students) => {
         this.classes = this.toClasses(students);
@@ -46,6 +71,16 @@ export class ClassesComponent implements OnInit {
     });
   }
 
+  private fromDirectory(classItem: ClassDirectoryRow): ClassRow {
+    return {
+      name: classItem.className,
+      students: classItem.studentCount,
+      parents: classItem.parentContactCount,
+      teacher: classItem.teacher,
+      recentBroadcasts: classItem.recentBroadcastCount
+    };
+  }
+
   private toClasses(students: ApiStudent[]): ClassRow[] {
     const rows = new Map<string, { students: number; phones: Set<string>; teacher: string }>();
     for (const student of students) {
@@ -57,7 +92,7 @@ export class ClassesComponent implements OnInit {
       rows.set(className, row);
     }
     return Array.from(rows.entries())
-      .map(([name, row]) => ({ name, students: row.students, parents: row.phones.size, teacher: row.teacher }))
+      .map(([name, row]) => ({ name, students: row.students, parents: row.phones.size, teacher: row.teacher, recentBroadcasts: 0 }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 

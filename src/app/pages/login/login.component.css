@@ -1,0 +1,60 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: var(--sb-bg);
+}
+
+.login-panel {
+  display: grid;
+  gap: 20px;
+  width: min(100%, 420px);
+  padding: 28px;
+  border: 1px solid var(--sb-border);
+  border-radius: 8px;
+  background: var(--sb-panel);
+  box-shadow: var(--sb-shadow);
+}
+
+.brand-mark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--sb-accent);
+  font-weight: 800;
+}
+
+h1 {
+  margin: 0;
+  color: var(--sb-text);
+  font-size: 24px;
+  letter-spacing: 0;
+}
+
+p {
+  margin: 6px 0 0;
+  color: var(--sb-muted);
+  font-size: 14px;
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.login-error {
+  padding: 12px;
+  border-radius: 8px;
+  color: var(--sb-danger);
+  background: color-mix(in srgb, var(--sb-danger) 10%, transparent);
+  font-size: 13px;
+}

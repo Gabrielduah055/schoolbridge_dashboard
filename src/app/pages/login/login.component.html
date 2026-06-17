@@ -1,0 +1,27 @@
+<main class="login-shell">
+  <section class="login-panel">
+    <div class="brand-mark">SB</div>
+    <div>
+      <h1>SchoolBridge Admin Login</h1>
+      <p>Sign in to manage school communication.</p>
+    </div>
+
+    <form class="login-form" (ngSubmit)="login()">
+      <label class="comm-field">
+        <span>Email</span>
+        <input type="email" name="email" [(ngModel)]="email" autocomplete="email" required />
+      </label>
+
+      <label class="comm-field">
+        <span>Password</span>
+        <input type="password" name="password" [(ngModel)]="password" autocomplete="current-password" required />
+      </label>
+
+      <div *ngIf="error" class="login-error">{{ error }}</div>
+
+      <button class="comm-button" type="submit" [disabled]="loading || !email.trim() || !password">
+        {{ loading ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+  </section>
+</main>

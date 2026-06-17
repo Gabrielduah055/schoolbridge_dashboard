@@ -3,13 +3,15 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { ApiService, Broadcast, MessageRecipient } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 interface BroadcastDraftForm {
   title: string;
   audienceType: Broadcast['audienceType'];
   originalText: string;
+  targetClass: string;
+  recipientPhone: string;
   telegram: boolean;
-  whatsapp: boolean;
 }
 
 @Component({
@@ -33,11 +35,15 @@ export class BroadcastsComponent implements OnInit {
     title: '',
     audienceType: 'whole_school',
     originalText: '',
-    telegram: true,
-    whatsapp: false
+    targetClass: '',
+    recipientPhone: '',
+    telegram: true
   };
 
-  constructor(private readonly api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    private readonly auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadBroadcasts();
@@ -52,7 +58,15 @@ export class BroadcastsComponent implements OnInit {
   }
 
   get failedCount(): number {
-    return this.broadcasts.filter((broadcast) => broadcast.status === 'failed' || broadcast.status === 'partial').length;
+    return this.broadcasts.filter((broadcast) => ['failed', 'partial', 'partially_failed'].includes(broadcast.status)).length;
+  }
+
+  get requiresClass(): boolean {
+    return this.draft.audienceType === 'class';
+  }
+
+  get requiresRecipientPhone(): boolean {
+    return ['individual', 'individual_parent'].includes(this.draft.audienceType);
   }
 
   statusClass(value?: string | null): string {
@@ -79,6 +93,10 @@ export class BroadcastsComponent implements OnInit {
     return this.deliverySummaries.get(this.broadcastId(broadcast)) || 'Recipient details unavailable';
   }
 
+  hasPermission(permission: string): boolean {
+    return this.auth.hasPermission(permission);
+  }
+
   createDraft(): void {
     const originalText = this.draft.originalText.trim();
     if (!originalText) {
@@ -86,9 +104,18 @@ export class BroadcastsComponent implements OnInit {
       return;
     }
 
-    const channels: Array<'telegram' | 'whatsapp'> = [];
+    if (this.requiresClass && !this.draft.targetClass.trim()) {
+      this.actionMessage = 'Enter the class name for this broadcast.';
+      return;
+    }
+
+    if (this.requiresRecipientPhone && !this.draft.recipientPhone.trim()) {
+      this.actionMessage = 'Enter the recipient phone number for this broadcast.';
+      return;
+    }
+
+    const channels: Array<'telegram'> = [];
     if (this.draft.telegram) channels.push('telegram');
-    if (this.draft.whatsapp) channels.push('whatsapp');
 
     this.saving = true;
     this.actionMessage = 'Creating draft...';
@@ -97,12 +124,21 @@ export class BroadcastsComponent implements OnInit {
       audienceType: this.draft.audienceType,
       title: this.draft.title.trim(),
       originalText,
+      targetClass: this.draft.targetClass.trim(),
+      recipientPhone: this.draft.recipientPhone.trim(),
       channels: channels.length ? channels : ['telegram']
     }).subscribe({
       next: () => {
         this.saving = false;
         this.actionMessage = 'Broadcast draft created.';
-        this.draft = { title: '', audienceType: 'whole_school', originalText: '', telegram: true, whatsapp: false };
+        this.draft = {
+          title: '',
+          audienceType: 'whole_school',
+          originalText: '',
+          targetClass: '',
+          recipientPhone: '',
+          telegram: true
+        };
         this.loadBroadcasts();
       },
       error: (err) => {
@@ -114,29 +150,61 @@ export class BroadcastsComponent implements OnInit {
   }
 
   approve(broadcast: Broadcast): void {
-    this.runBroadcastAction(broadcast, 'approve');
+    const currentText = broadcast.draftedText || broadcast.originalText || '';
+    const editedText = window.prompt('Review or edit the final broadcast message before approval.', currentText);
+    if (editedText === null) return;
+    this.runBroadcastAction(broadcast, 'approve', editedText.trim() || currentText);
   }
 
   send(broadcast: Broadcast): void {
     this.runBroadcastAction(broadcast, 'send');
   }
 
-  private runBroadcastAction(broadcast: Broadcast, action: 'approve' | 'send'): void {
+  audienceLabel(broadcast: Broadcast): string {
+    if (broadcast.audienceType === 'class') return `Class: ${broadcast.targetClass || broadcast.classId || '-'}`;
+    if (['individual', 'individual_parent'].includes(broadcast.audienceType)) return `Individual: ${broadcast.recipientPhone || '-'}`;
+    return broadcast.audienceType.replace(/_/g, ' ');
+  }
+
+  private runBroadcastAction(broadcast: Broadcast, action: 'approve' | 'send', draftedText?: string): void {
     const id = this.broadcastId(broadcast);
     if (!id) return;
     this.actionId = id;
-    const request = action === 'approve' ? this.api.approveBroadcast(id) : this.api.sendBroadcast(id);
-    request.subscribe({
+    this.actionMessage = action === 'approve' ? 'Approving broadcast...' : 'Sending broadcast...';
+
+    if (action === 'approve') {
+      this.api.approveBroadcast(id, draftedText).subscribe({
+        next: (updated) => {
+          this.broadcasts = this.broadcasts.map((item) => this.broadcastId(item) === id ? updated : item);
+          this.actionId = '';
+          this.actionMessage = 'Broadcast approved.';
+          this.loadRecipientSummaries(this.broadcasts);
+        },
+        error: (err) => {
+          console.error('Failed to approve broadcast', err);
+          this.actionId = '';
+          this.actionMessage = 'Could not approve broadcast.';
+        }
+      });
+      return;
+    }
+
+    this.api.sendBroadcast(id).subscribe({
       next: (updated) => {
-        this.broadcasts = this.broadcasts.map((item) => this.broadcastId(item) === id ? updated : item);
+        this.broadcasts = this.broadcasts.map((item) => this.broadcastId(item) === id ? updated.broadcast : item);
+        this.recipientCounts.set(id, updated.deliverySummary.totalRecipients);
+        this.deliverySummaries.set(
+          id,
+          `${updated.deliverySummary.sentCount} sent, ${updated.deliverySummary.failedCount} failed, ${updated.deliverySummary.pendingCount} pending`
+        );
         this.actionId = '';
-        this.actionMessage = action === 'approve' ? 'Broadcast approved.' : 'Broadcast send started.';
+        this.actionMessage = 'Broadcast send completed.';
         this.loadRecipientSummaries(this.broadcasts);
       },
       error: (err) => {
-        console.error(`Failed to ${action} broadcast`, err);
+        console.error('Failed to send broadcast', err);
         this.actionId = '';
-        this.actionMessage = `Could not ${action} broadcast.`;
+        this.actionMessage = 'Could not send broadcast.';
       }
     });
   }

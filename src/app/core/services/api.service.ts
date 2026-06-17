@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -22,7 +22,7 @@ export interface ChannelAccount {
   provider: string;
   displayName: string;
   identifier: string;
-  status: 'connected' | 'disconnected' | 'needs_scan' | 'error' | 'unknown';
+  status: 'connected' | 'disconnected' | 'needs_scan' | 'active' | 'error' | 'unknown';
   lastInboundAt: string | null;
   lastOutboundAt: string | null;
   lastError: string;
@@ -54,7 +54,8 @@ export interface Conversation {
     senderName: string;
     timestamp: string;
   }>;
-  status: 'active' | 'open' | 'ai_replied' | 'needs_human' | 'assigned' | 'resolved' | 'failed';
+  status: 'active' | 'open' | 'ai_replied' | 'needs_human' | 'assigned' | 'resolved' | 'failed' | 'failed_delivery';
+  resolvedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -96,9 +97,14 @@ export interface HandoverTicket {
   priority: 'low' | 'normal' | 'high' | 'urgent';
   status: 'open' | 'assigned' | 'resolved' | 'closed';
   assignedTo: string;
+  assignedBy?: string | null;
+  assignedByName?: string;
   internalNotes: string;
+  notes?: Array<{ text: string; createdBy: string; createdAt: string }>;
   aiSuggestedReply: string;
   resolvedAt: string | null;
+  resolvedBy?: string | null;
+  resolvedByName?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -109,14 +115,21 @@ export interface Broadcast {
   schoolId: string;
   createdBy?: string | null;
   createdByRole: 'teacher' | 'admin';
-  audienceType: 'whole_school' | 'class' | 'individual' | 'teachers' | 'parents';
+  audienceType: 'whole_school' | 'class' | 'individual' | 'individual_parent' | 'teachers' | 'parents';
   classId?: string | null;
+  targetClass?: string;
+  recipientPhone?: string;
   title: string;
   originalText: string;
   draftedText: string;
   approvalStatus: 'draft' | 'pending_approval' | 'approved' | 'rejected';
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'partial' | 'failed' | 'cancelled';
+  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'partial' | 'partially_failed' | 'failed' | 'cancelled';
   channels: Array<'telegram' | 'whatsapp'>;
+  approvedBy?: string | null;
+  approvedByName?: string;
+  approvedAt?: string | null;
+  sentBy?: string | null;
+  sentByName?: string;
   sentAt: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -127,6 +140,7 @@ export interface MessageRecipient {
   id?: string;
   broadcastId?: string | null;
   messageId?: string | null;
+  recipientId?: string | null;
   recipientName: string;
   recipientPhone: string;
   recipientRole: 'parent' | 'teacher' | 'admin' | 'visitor';
@@ -144,6 +158,8 @@ export interface DeliveryLog {
   _id?: string;
   id?: string;
   messageId?: string | null;
+  broadcastId?: string | null;
+  recipientId?: string | null;
   schoolId: string;
   channel: 'telegram' | 'whatsapp';
   provider: string;
@@ -166,6 +182,7 @@ export interface WebhookEvent {
   rawPayload: Record<string, unknown>;
   processedAt: string | null;
   status: 'received' | 'processed' | 'failed' | 'ignored';
+  errorMessage?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -176,8 +193,64 @@ export interface BroadcastDraftPayload {
   originalText: string;
   title?: string;
   draftedText?: string;
+  classId?: string;
+  targetClass?: string;
+  recipientPhone?: string;
   channels?: Array<'telegram' | 'whatsapp'>;
   schoolId?: string;
+}
+
+export interface DashboardMetrics {
+  messagesToday: number;
+  openConversations: number;
+  pendingHandovers: number;
+  failedDeliveries: number;
+  broadcastsSentToday: number;
+  telegramStatus: string;
+  whatsappStatus: string;
+  recentConversations: Conversation[];
+  recentHandovers: HandoverTicket[];
+}
+
+export interface BroadcastSendResult {
+  broadcast: Broadcast;
+  deliverySummary: {
+    totalRecipients: number;
+    sentCount: number;
+    failedCount: number;
+    pendingCount: number;
+  };
+}
+
+export interface ParentDirectoryRow {
+  name: string;
+  phone: string;
+  email: string;
+  linkedStudents: Array<{ id: string; name: string; class: string; admissionNumber: string }>;
+  classes: string[];
+  preferredChannel: string;
+  channelIdentityStatus: string;
+  lastConversationAt: string | null;
+}
+
+export interface TeacherDirectoryRow {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  assignedClasses: string[];
+  subject: string;
+  channelIdentityStatus: string;
+  lastConversationAt: string | null;
+}
+
+export interface ClassDirectoryRow {
+  id: string;
+  className: string;
+  teacher: string;
+  studentCount: number;
+  parentContactCount: number;
+  recentBroadcastCount: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -247,10 +320,60 @@ export class ApiService {
       .pipe(map((response) => this.extractArray<Message>(response, ['messages', 'data', 'items', 'results'])));
   }
 
+  replyToConversation(id: string, body: string, senderName = 'Admin'): Observable<Message> {
+    return this.http.post<Message>(`${this.api}/api/conversations/${id}/reply`, {
+      body,
+      senderName,
+      senderRole: 'admin'
+    }, this.authOptions());
+  }
+
+  assignConversation(id: string, assignedTo: string): Observable<Conversation> {
+    return this.http.post<Conversation>(`${this.api}/api/conversations/${id}/assign`, { assignedTo }, this.authOptions());
+  }
+
+  resolveConversation(id: string): Observable<Conversation> {
+    return this.http.post<Conversation>(`${this.api}/api/conversations/${id}/resolve`, {}, this.authOptions());
+  }
+
+  reopenConversation(id: string): Observable<Conversation> {
+    return this.http.post<Conversation>(`${this.api}/api/conversations/${id}/reopen`, {}, this.authOptions());
+  }
+
+  markConversationNeedsHuman(id: string, reason = 'Marked for human attention by dashboard') {
+    return this.http.post<{ conversation: Conversation; ticket: HandoverTicket }>(
+      `${this.api}/api/conversations/${id}/mark-needs-human`,
+      { reason },
+      this.authOptions()
+    );
+  }
+
   getChannelAccounts(): Observable<ChannelAccount[]> {
     return this.http
       .get<unknown>(`${this.api}/api/channel-accounts`, this.authOptions())
       .pipe(map((response) => this.extractArray<ChannelAccount>(response, ['accounts', 'channelAccounts', 'data', 'items', 'results'])));
+  }
+
+  getDashboardMetrics(): Observable<DashboardMetrics> {
+    return this.http.get<DashboardMetrics>(`${this.api}/api/dashboard/metrics`, this.authOptions());
+  }
+
+  getParents(): Observable<ParentDirectoryRow[]> {
+    return this.http
+      .get<unknown>(`${this.api}/api/parents`, this.authOptions())
+      .pipe(map((response) => this.extractArray<ParentDirectoryRow>(response, ['parents', 'data', 'items', 'results'])));
+  }
+
+  getTeachers(): Observable<TeacherDirectoryRow[]> {
+    return this.http
+      .get<unknown>(`${this.api}/api/teachers`, this.authOptions())
+      .pipe(map((response) => this.extractArray<TeacherDirectoryRow>(response, ['teachers', 'data', 'items', 'results'])));
+  }
+
+  getClasses(): Observable<ClassDirectoryRow[]> {
+    return this.http
+      .get<unknown>(`${this.api}/api/classes`, this.authOptions())
+      .pipe(map((response) => this.extractArray<ClassDirectoryRow>(response, ['classes', 'data', 'items', 'results'])));
   }
 
   getHandoverTickets(status?: string): Observable<HandoverTicket[]> {
@@ -263,6 +386,14 @@ export class ApiService {
     return this.http.post<HandoverTicket>(`${this.api}/api/handover-tickets/${id}/resolve`, { internalNotes }, this.authOptions());
   }
 
+  assignHandoverTicket(id: string, assignedTo: string): Observable<HandoverTicket> {
+    return this.http.post<HandoverTicket>(`${this.api}/api/handover-tickets/${id}/assign`, { assignedTo }, this.authOptions());
+  }
+
+  addHandoverNote(id: string, note: string, createdBy = 'Admin'): Observable<HandoverTicket> {
+    return this.http.post<HandoverTicket>(`${this.api}/api/handover-tickets/${id}/note`, { note, createdBy }, this.authOptions());
+  }
+
   getBroadcasts(): Observable<Broadcast[]> {
     return this.http
       .get<unknown>(`${this.api}/api/broadcasts`, this.authOptions())
@@ -273,12 +404,16 @@ export class ApiService {
     return this.http.post<Broadcast>(`${this.api}/api/broadcasts/draft`, payload, this.authOptions());
   }
 
-  approveBroadcast(id: string): Observable<Broadcast> {
-    return this.http.post<Broadcast>(`${this.api}/api/broadcasts/${id}/approve`, {}, this.authOptions());
+  approveBroadcast(id: string, draftedText?: string): Observable<Broadcast> {
+    return this.http.post<Broadcast>(
+      `${this.api}/api/broadcasts/${id}/approve`,
+      draftedText ? { draftedText } : {},
+      this.authOptions()
+    );
   }
 
-  sendBroadcast(id: string): Observable<Broadcast> {
-    return this.http.post<Broadcast>(`${this.api}/api/broadcasts/${id}/send`, {}, this.authOptions());
+  sendBroadcast(id: string): Observable<BroadcastSendResult> {
+    return this.http.post<BroadcastSendResult>(`${this.api}/api/broadcasts/${id}/send`, {}, this.authOptions());
   }
 
   getBroadcastRecipients(id: string): Observable<MessageRecipient[]> {
@@ -319,19 +454,8 @@ export class ApiService {
     return [];
   }
 
-  private authOptions(): { headers?: HttpHeaders } {
-    const token = this.adminApiKey();
-    return token ? { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) } : {};
-  }
-
-  private adminApiKey(): string {
-    if (environment.adminApiKey) return environment.adminApiKey;
-
-    try {
-      return localStorage.getItem('schoolbridge_admin_api_key')?.trim() || '';
-    } catch {
-      return '';
-    }
+  private authOptions(): Record<string, never> {
+    return {};
   }
 
   private cleanParams(params: Record<string, string | undefined>): Record<string, string> {

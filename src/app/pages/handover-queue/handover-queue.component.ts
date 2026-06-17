@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { ApiService, Conversation, HandoverTicket } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-handover-queue-page',
@@ -15,10 +16,14 @@ export class HandoverQueueComponent implements OnInit {
   loading = true;
   resolvingId = '';
   error = '';
+  actionId = '';
   tickets: HandoverTicket[] = [];
   conversationsById = new Map<string, Conversation>();
 
-  constructor(private readonly api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    private readonly auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadTickets();
@@ -60,6 +65,10 @@ export class HandoverQueueComponent implements OnInit {
     return date.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
+  hasPermission(permission: string): boolean {
+    return this.auth.hasPermission(permission);
+  }
+
   resolve(ticket: HandoverTicket): void {
     const id = ticket._id || ticket.id;
     if (!id) return;
@@ -73,6 +82,46 @@ export class HandoverQueueComponent implements OnInit {
         console.error('Failed to resolve handover ticket', err);
         this.error = 'Could not resolve the ticket. Please try again.';
         this.resolvingId = '';
+      }
+    });
+  }
+
+  assign(ticket: HandoverTicket): void {
+    const id = ticket._id || ticket.id;
+    if (!id) return;
+    const assignedTo = window.prompt('Assign ticket to:', ticket.assignedTo || 'Admin')?.trim();
+    if (!assignedTo) return;
+
+    this.actionId = id;
+    this.api.assignHandoverTicket(id, assignedTo).subscribe({
+      next: (updated) => {
+        this.tickets = this.tickets.map((item) => (item._id || item.id) === id ? updated : item);
+        this.actionId = '';
+      },
+      error: (err) => {
+        console.error('Failed to assign handover ticket', err);
+        this.error = 'Could not assign the ticket.';
+        this.actionId = '';
+      }
+    });
+  }
+
+  addNote(ticket: HandoverTicket): void {
+    const id = ticket._id || ticket.id;
+    if (!id) return;
+    const note = window.prompt('Add internal note:')?.trim();
+    if (!note) return;
+
+    this.actionId = id;
+    this.api.addHandoverNote(id, note).subscribe({
+      next: (updated) => {
+        this.tickets = this.tickets.map((item) => (item._id || item.id) === id ? updated : item);
+        this.actionId = '';
+      },
+      error: (err) => {
+        console.error('Failed to add handover note', err);
+        this.error = 'Could not add note.';
+        this.actionId = '';
       }
     });
   }

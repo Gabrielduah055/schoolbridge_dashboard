@@ -3,7 +3,7 @@
     <article class="comm-card metric-card">
       <span>Parents</span>
       <strong>{{ loading ? '-' : parents.length }}</strong>
-      <p>Derived from student contacts</p>
+      <p>{{ sourceLabel }}</p>
     </article>
     <article class="comm-card metric-card">
       <span>Reachable by phone</span>
@@ -44,6 +44,8 @@
             <th>Email</th>
             <th>Students</th>
             <th>Classes</th>
+            <th>Telegram</th>
+            <th>Last conversation</th>
           </tr>
         </thead>
         <tbody>
@@ -53,6 +55,8 @@
             <td>{{ parent.email || '-' }}</td>
             <td>{{ parent.students.join(', ') }}</td>
             <td>{{ parent.classes.join(', ') }}</td>
+            <td><span class="channel-badge">{{ parent.channelIdentityStatus }}</span></td>
+            <td>{{ formatDate(parent.lastConversationAt) }}</td>
           </tr>
         </tbody>
       </table>

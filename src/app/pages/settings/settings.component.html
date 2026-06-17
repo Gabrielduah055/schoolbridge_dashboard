@@ -1,8 +1,8 @@
 <section class="comm-page">
   <section class="comm-card pad settings-card">
     <div>
-      <h2 class="comm-section-title">Backend Access</h2>
-      <p class="comm-muted">Protected dashboard endpoints require an admin API key.</p>
+      <h2 class="comm-section-title">Admin Account</h2>
+      <p class="comm-muted">Dashboard access is protected by your SchoolBridge admin login.</p>
     </div>
 
     <div class="settings-grid">
@@ -10,16 +10,26 @@
         <span>Backend URL</span>
         <strong>{{ apiUrl }}</strong>
       </div>
-      <label class="comm-field">
-        <span>Admin API key</span>
-        <input type="password" [(ngModel)]="adminApiKey" placeholder="Paste ADMIN_API_KEY" autocomplete="off" />
-      </label>
+      <div>
+        <span>Name</span>
+        <strong>{{ user?.name || '-' }}</strong>
+      </div>
+      <div>
+        <span>Email</span>
+        <strong>{{ user?.email || '-' }}</strong>
+      </div>
+      <div>
+        <span>Role</span>
+        <strong>{{ user?.role || '-' }}</strong>
+      </div>
+      <div class="full">
+        <span>Permissions</span>
+        <strong>{{ permissionPreview() || '-' }}</strong>
+      </div>
     </div>
 
     <div class="settings-actions">
-      <button class="comm-button" type="button" (click)="save()">Save key locally</button>
-      <button class="comm-button-secondary" type="button" (click)="clear()">Clear key</button>
-      <span *ngIf="saved" class="saved-note">Settings updated.</span>
+      <button class="comm-button-secondary" type="button" (click)="logout()">Log out</button>
     </div>
   </section>
 </section>

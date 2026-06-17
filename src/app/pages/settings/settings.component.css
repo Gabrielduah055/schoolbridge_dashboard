@@ -21,6 +21,10 @@
   background: var(--sb-surface-muted);
 }
 
+.settings-grid > .full {
+  grid-column: 1 / -1;
+}
+
 .settings-grid span {
   display: block;
   color: var(--sb-muted);

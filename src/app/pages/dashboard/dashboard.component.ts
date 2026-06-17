@@ -4,10 +4,8 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import {
   ApiService,
-  Broadcast,
   ChannelAccount,
   Conversation,
-  DeliveryLog,
   HandoverTicket
 } from '../../core/services/api.service';
 
@@ -38,9 +36,7 @@ export class DashboardComponent implements OnInit {
 
   conversations: Conversation[] = [];
   handovers: HandoverTicket[] = [];
-  broadcasts: Broadcast[] = [];
   channelAccounts: ChannelAccount[] = [];
-  deliveryLogs: DeliveryLog[] = [];
 
   constructor(private readonly api: ApiService) {}
 
@@ -80,19 +76,20 @@ export class DashboardComponent implements OnInit {
     this.error = '';
 
     forkJoin({
-      conversations: this.api.getConversations(),
-      handovers: this.api.getHandoverTickets(),
-      broadcasts: this.api.getBroadcasts(),
-      channels: this.api.getChannelAccounts(),
-      deliveryLogs: this.api.getDeliveryLogs()
+      metrics: this.api.getDashboardMetrics(),
+      channels: this.api.getChannelAccounts()
     }).subscribe({
-      next: ({ conversations, handovers, broadcasts, channels, deliveryLogs }) => {
-        this.conversations = conversations;
-        this.handovers = handovers;
-        this.broadcasts = broadcasts;
+      next: ({ metrics, channels }) => {
+        this.conversations = metrics.recentConversations;
+        this.handovers = metrics.recentHandovers;
         this.channelAccounts = channels;
-        this.deliveryLogs = deliveryLogs;
-        this.updateMetrics();
+        this.metrics = [
+          { label: 'Messages today', value: String(metrics.messagesToday), note: 'From backend message records' },
+          { label: 'Open conversations', value: String(metrics.openConversations), note: 'Active admin inbox threads' },
+          { label: 'Pending handovers', value: String(metrics.pendingHandovers), note: 'Need human attention' },
+          { label: 'Failed deliveries', value: String(metrics.failedDeliveries), note: 'Requires retry or review' },
+          { label: 'Broadcasts sent', value: String(metrics.broadcastsSentToday), note: 'Sent today' }
+        ];
         this.loading = false;
       },
       error: (err) => {
@@ -101,26 +98,5 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       }
     });
-  }
-
-  private updateMetrics(): void {
-    const today = new Date();
-    const isToday = (value?: string | null) => {
-      if (!value) return false;
-      const date = new Date(value);
-      return !Number.isNaN(date.getTime()) && date.toDateString() === today.toDateString();
-    };
-
-    const messagesToday = this.conversations
-      .flatMap((conversation) => conversation.messages ?? [])
-      .filter((message) => isToday(message.timestamp)).length;
-
-    this.metrics = [
-      { label: 'Messages today', value: String(messagesToday), note: messagesToday ? 'From embedded conversation summaries' : 'No message activity exposed today' },
-      { label: 'Open conversations', value: String(this.conversations.filter((item) => !['resolved', 'failed'].includes(item.status)).length), note: 'Active, assigned, or AI-replied threads' },
-      { label: 'Pending handovers', value: String(this.handovers.filter((item) => ['open', 'assigned'].includes(item.status)).length), note: 'Tickets waiting on staff' },
-      { label: 'Failed deliveries', value: String(this.deliveryLogs.filter((item) => item.status === 'failed').length), note: 'From delivery log events' },
-      { label: 'Broadcasts sent', value: String(this.broadcasts.filter((item) => item.status === 'sent').length), note: 'Successfully completed broadcasts' }
-    ];
   }
 }

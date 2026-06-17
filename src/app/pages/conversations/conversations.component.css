@@ -223,6 +223,27 @@
   resize: vertical;
 }
 
+.thread-workbench input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  color: var(--sb-text);
+  border: 1px solid var(--sb-border);
+  border-radius: 8px;
+  background: var(--sb-surface);
+}
+
+.thread-workbench button {
+  justify-self: start;
+}
+
+.action-message {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: var(--sb-muted);
+  font-size: 13px;
+}
+
 .message-error,
 .inbox-error {
   color: var(--sb-danger);

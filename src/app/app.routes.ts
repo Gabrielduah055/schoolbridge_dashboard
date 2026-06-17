@@ -15,6 +15,7 @@ import { EventsComponent } from './pages/events/events.component';
 import { ExamResultsComponent } from './pages/exam-results/exam-results.component';
 import { FeeManagementComponent } from './pages/fee-management/fee-management.component';
 import { KnowledgeBaseComponent } from './pages/knowledge-base/knowledge-base.component';
+import { LoginComponent } from './pages/login/login.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { HandoverQueueComponent } from './pages/handover-queue/handover-queue.component';
 import { ParentsComponent } from './pages/parents/parents.component';
@@ -23,11 +24,15 @@ import { SettingsComponent } from './pages/settings/settings.component';
 import { StudentDetailsComponent } from './pages/student-details/student-details.component';
 import { StudentsComponent } from './pages/students/students.component';
 import { TeachersComponent } from './pages/teachers/teachers.component';
+import { authGuard } from './core/auth.guard';
 
 export const routes: Routes = [
+  { path: 'login', component: LoginComponent },
   {
     path: '',
     component: AdminLayoutComponent,
+    canActivate: [authGuard],
+    canActivateChild: [authGuard],
     children: [
       { path: '', component: DashboardComponent },
       { path: 'overview', redirectTo: '', pathMatch: 'full' },
