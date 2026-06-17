@@ -117,11 +117,20 @@ export interface Broadcast {
   createdByRole: 'teacher' | 'admin';
   audienceType: 'whole_school' | 'class' | 'individual' | 'individual_parent' | 'teachers' | 'parents';
   classId?: string | null;
+  recipientStudentId?: string | null;
+  recipientStudentName?: string;
   targetClass?: string;
   recipientPhone?: string;
   title: string;
   originalText: string;
   draftedText: string;
+  attachments?: Array<{
+    originalName: string;
+    fileName: string;
+    filePath: string;
+    mimeType: string;
+    size: number;
+  }>;
   approvalStatus: 'draft' | 'pending_approval' | 'approved' | 'rejected';
   status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'partial' | 'partially_failed' | 'failed' | 'cancelled';
   channels: Array<'telegram' | 'whatsapp'>;
@@ -194,10 +203,28 @@ export interface BroadcastDraftPayload {
   title?: string;
   draftedText?: string;
   classId?: string;
+  recipientStudentId?: string;
+  recipientStudentName?: string;
   targetClass?: string;
   recipientPhone?: string;
   channels?: Array<'telegram' | 'whatsapp'>;
   schoolId?: string;
+  attachment?: File | null;
+}
+
+export interface BroadcastMetrics {
+  totalBroadcasts: number;
+  sentTotal: number;
+  sentToday: number;
+  draftCount: number;
+  pendingApprovalCount: number;
+  approvedCount: number;
+  failedCount: number;
+  recipientSummary: {
+    sent: number;
+    failed: number;
+    skipped: number;
+  };
 }
 
 export interface DashboardMetrics {
@@ -400,7 +427,29 @@ export class ApiService {
       .pipe(map((response) => this.extractArray<Broadcast>(response, ['broadcasts', 'data', 'items', 'results'])));
   }
 
+  getBroadcastMetrics(): Observable<BroadcastMetrics> {
+    return this.http.get<BroadcastMetrics>(`${this.api}/api/broadcasts/metrics`, this.authOptions());
+  }
+
   createBroadcastDraft(payload: BroadcastDraftPayload): Observable<Broadcast> {
+    if (payload.attachment) {
+      const formData = new FormData();
+      formData.append('createdByRole', payload.createdByRole);
+      formData.append('audienceType', payload.audienceType);
+      formData.append('originalText', payload.originalText);
+      if (payload.title) formData.append('title', payload.title);
+      if (payload.draftedText) formData.append('draftedText', payload.draftedText);
+      if (payload.classId) formData.append('classId', payload.classId);
+      if (payload.recipientStudentId) formData.append('recipientStudentId', payload.recipientStudentId);
+      if (payload.recipientStudentName) formData.append('recipientStudentName', payload.recipientStudentName);
+      if (payload.targetClass) formData.append('targetClass', payload.targetClass);
+      if (payload.recipientPhone) formData.append('recipientPhone', payload.recipientPhone);
+      if (payload.schoolId) formData.append('schoolId', payload.schoolId);
+      if (payload.channels?.length) formData.append('channels', payload.channels.join(','));
+      formData.append('attachment', payload.attachment);
+      return this.http.post<Broadcast>(`${this.api}/api/broadcasts/draft`, formData, this.authOptions());
+    }
+
     return this.http.post<Broadcast>(`${this.api}/api/broadcasts/draft`, payload, this.authOptions());
   }
 

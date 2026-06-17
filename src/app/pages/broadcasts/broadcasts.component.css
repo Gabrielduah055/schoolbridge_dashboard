@@ -28,6 +28,67 @@
   color: var(--sb-muted);
 }
 
+.attachment-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--sb-border);
+  border-radius: 8px;
+  background: var(--sb-surface-muted);
+}
+
+.attachment-picker input {
+  display: none;
+}
+
+.attachment-picker div {
+  min-width: 0;
+}
+
+.attachment-picker span,
+.review-editor span {
+  display: block;
+  color: var(--sb-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.attachment-picker strong {
+  display: block;
+  overflow: hidden;
+  color: var(--sb-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--sb-surface-muted);
+  color: var(--sb-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.review-editor {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.review-editor textarea {
+  width: min(420px, 100%);
+  min-height: 86px;
+  resize: vertical;
+}
+
 .action-message,
 .broadcast-error {
   margin: 12px 0 0;
@@ -51,7 +112,12 @@
 
 @media (max-width: 720px) {
   .draft-heading,
-  .broadcast-actions {
+  .broadcast-actions,
+  .attachment-picker {
     display: grid;
+  }
+
+  .attachment-picker {
+    grid-template-columns: 1fr;
   }
 }
