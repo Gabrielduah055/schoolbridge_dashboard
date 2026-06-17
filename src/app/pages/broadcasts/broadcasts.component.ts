@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
-import { ApiService, Broadcast, MessageRecipient } from '../../core/services/api.service';
+import { ApiService, ApiStudent, Broadcast, BroadcastMetrics, MessageRecipient } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
 interface BroadcastDraftForm {
@@ -10,8 +10,16 @@ interface BroadcastDraftForm {
   audienceType: Broadcast['audienceType'];
   originalText: string;
   targetClass: string;
+  recipientStudentId: string;
   recipientPhone: string;
   telegram: boolean;
+}
+
+interface StudentOption {
+  id: string;
+  name: string;
+  className: string;
+  parentName: string;
 }
 
 @Component({
@@ -28,14 +36,19 @@ export class BroadcastsComponent implements OnInit {
   error = '';
   actionMessage = '';
   broadcasts: Broadcast[] = [];
+  students: StudentOption[] = [];
+  metrics: BroadcastMetrics | null = null;
   recipientCounts = new Map<string, number>();
   deliverySummaries = new Map<string, string>();
+  editedDrafts = new Map<string, string>();
+  selectedAttachment: File | null = null;
 
   draft: BroadcastDraftForm = {
     title: '',
     audienceType: 'whole_school',
     originalText: '',
     targetClass: '',
+    recipientStudentId: '',
     recipientPhone: '',
     telegram: true
   };
@@ -50,15 +63,19 @@ export class BroadcastsComponent implements OnInit {
   }
 
   get sentCount(): number {
-    return this.broadcasts.filter((broadcast) => broadcast.status === 'sent').length;
+    return this.metrics?.sentTotal ?? this.broadcasts.filter((broadcast) => ['sent', 'partial', 'partially_failed'].includes(broadcast.status)).length;
   }
 
   get pendingApprovalCount(): number {
-    return this.broadcasts.filter((broadcast) => broadcast.approvalStatus === 'pending_approval' || broadcast.approvalStatus === 'draft').length;
+    return this.metrics?.pendingApprovalCount ?? this.broadcasts.filter((broadcast) => broadcast.approvalStatus === 'pending_approval' || broadcast.approvalStatus === 'draft').length;
   }
 
   get failedCount(): number {
-    return this.broadcasts.filter((broadcast) => ['failed', 'partial', 'partially_failed'].includes(broadcast.status)).length;
+    return this.metrics?.failedCount ?? this.broadcasts.filter((broadcast) => broadcast.status === 'failed').length;
+  }
+
+  get attachmentLabel(): string {
+    return this.selectedAttachment ? `${this.selectedAttachment.name} (${this.fileSize(this.selectedAttachment.size)})` : 'No document attached';
   }
 
   get requiresClass(): boolean {
@@ -66,7 +83,15 @@ export class BroadcastsComponent implements OnInit {
   }
 
   get requiresRecipientPhone(): boolean {
+    return false;
+  }
+
+  get requiresStudentRecipient(): boolean {
     return ['individual', 'individual_parent'].includes(this.draft.audienceType);
+  }
+
+  get selectedStudent(): StudentOption | undefined {
+    return this.students.find((student) => student.id === this.draft.recipientStudentId);
   }
 
   statusClass(value?: string | null): string {
@@ -93,6 +118,22 @@ export class BroadcastsComponent implements OnInit {
     return this.deliverySummaries.get(this.broadcastId(broadcast)) || 'Recipient details unavailable';
   }
 
+  editableText(broadcast: Broadcast): string {
+    const id = this.broadcastId(broadcast);
+    return this.editedDrafts.get(id) ?? broadcast.draftedText ?? broadcast.originalText ?? '';
+  }
+
+  setEditedDraft(broadcast: Broadcast, value: string): void {
+    const id = this.broadcastId(broadcast);
+    if (id) this.editedDrafts.set(id, value);
+  }
+
+  attachmentSummary(broadcast: Broadcast): string {
+    const count = broadcast.attachments?.length ?? 0;
+    if (count === 0) return '';
+    return count === 1 ? `1 attachment: ${broadcast.attachments?.[0]?.originalName || 'document'}` : `${count} attachments`;
+  }
+
   hasPermission(permission: string): boolean {
     return this.auth.hasPermission(permission);
   }
@@ -109,8 +150,8 @@ export class BroadcastsComponent implements OnInit {
       return;
     }
 
-    if (this.requiresRecipientPhone && !this.draft.recipientPhone.trim()) {
-      this.actionMessage = 'Enter the recipient phone number for this broadcast.';
+    if (this.requiresStudentRecipient && !this.draft.recipientStudentId) {
+      this.actionMessage = 'Select the child whose parent should receive this broadcast.';
       return;
     }
 
@@ -125,8 +166,11 @@ export class BroadcastsComponent implements OnInit {
       title: this.draft.title.trim(),
       originalText,
       targetClass: this.draft.targetClass.trim(),
+      recipientStudentId: this.draft.recipientStudentId,
+      recipientStudentName: this.selectedStudent?.name,
       recipientPhone: this.draft.recipientPhone.trim(),
-      channels: channels.length ? channels : ['telegram']
+      channels: channels.length ? channels : ['telegram'],
+      attachment: this.selectedAttachment
     }).subscribe({
       next: () => {
         this.saving = false;
@@ -136,9 +180,11 @@ export class BroadcastsComponent implements OnInit {
           audienceType: 'whole_school',
           originalText: '',
           targetClass: '',
+          recipientStudentId: '',
           recipientPhone: '',
           telegram: true
         };
+        this.selectedAttachment = null;
         this.loadBroadcasts();
       },
       error: (err) => {
@@ -150,10 +196,12 @@ export class BroadcastsComponent implements OnInit {
   }
 
   approve(broadcast: Broadcast): void {
-    const currentText = broadcast.draftedText || broadcast.originalText || '';
-    const editedText = window.prompt('Review or edit the final broadcast message before approval.', currentText);
-    if (editedText === null) return;
-    this.runBroadcastAction(broadcast, 'approve', editedText.trim() || currentText);
+    const currentText = this.editableText(broadcast).trim();
+    if (!currentText) {
+      this.actionMessage = 'Review message cannot be empty.';
+      return;
+    }
+    this.runBroadcastAction(broadcast, 'approve', currentText);
   }
 
   send(broadcast: Broadcast): void {
@@ -162,8 +210,25 @@ export class BroadcastsComponent implements OnInit {
 
   audienceLabel(broadcast: Broadcast): string {
     if (broadcast.audienceType === 'class') return `Class: ${broadcast.targetClass || broadcast.classId || '-'}`;
-    if (['individual', 'individual_parent'].includes(broadcast.audienceType)) return `Individual: ${broadcast.recipientPhone || '-'}`;
+    if (['individual', 'individual_parent'].includes(broadcast.audienceType)) {
+      return `Child: ${broadcast.recipientStudentName || broadcast.recipientPhone || '-'}`;
+    }
     return broadcast.audienceType.replace(/_/g, ' ');
+  }
+
+  canSend(broadcast: Broadcast): boolean {
+    return broadcast.approvalStatus === 'approved' &&
+      !['sent', 'partial', 'partially_failed', 'sending'].includes(broadcast.status);
+  }
+
+  onAttachmentSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedAttachment = input.files?.[0] ?? null;
+  }
+
+  clearAttachment(input: HTMLInputElement): void {
+    input.value = '';
+    this.selectedAttachment = null;
   }
 
   private runBroadcastAction(broadcast: Broadcast, action: 'approve' | 'send', draftedText?: string): void {
@@ -176,8 +241,10 @@ export class BroadcastsComponent implements OnInit {
       this.api.approveBroadcast(id, draftedText).subscribe({
         next: (updated) => {
           this.broadcasts = this.broadcasts.map((item) => this.broadcastId(item) === id ? updated : item);
+          this.editedDrafts.set(id, updated.draftedText || draftedText || '');
           this.actionId = '';
           this.actionMessage = 'Broadcast approved.';
+          this.loadMetrics();
           this.loadRecipientSummaries(this.broadcasts);
         },
         error: (err) => {
@@ -199,6 +266,7 @@ export class BroadcastsComponent implements OnInit {
         );
         this.actionId = '';
         this.actionMessage = 'Broadcast send completed.';
+        this.loadMetrics();
         this.loadRecipientSummaries(this.broadcasts);
       },
       error: (err) => {
@@ -212,9 +280,12 @@ export class BroadcastsComponent implements OnInit {
   private loadBroadcasts(): void {
     this.loading = true;
     this.error = '';
+    this.loadMetrics();
+    this.loadStudents();
     this.api.getBroadcasts().subscribe({
       next: (broadcasts) => {
         this.broadcasts = broadcasts;
+        this.seedEditedDrafts(broadcasts);
         this.loading = false;
         this.loadRecipientSummaries(broadcasts);
       },
@@ -222,6 +293,31 @@ export class BroadcastsComponent implements OnInit {
         console.error('Failed to load broadcasts', err);
         this.error = 'Could not load broadcasts. Check the admin API key in Settings.';
         this.loading = false;
+      }
+    });
+  }
+
+  private loadMetrics(): void {
+    this.api.getBroadcastMetrics().subscribe({
+      next: (metrics) => {
+        this.metrics = metrics;
+      },
+      error: (err) => {
+        console.error('Failed to load broadcast metrics', err);
+      }
+    });
+  }
+
+  private loadStudents(): void {
+    this.api.getStudents().subscribe({
+      next: (students) => {
+        this.students = students
+          .map((student) => this.toStudentOption(student))
+          .filter((student): student is StudentOption => Boolean(student?.id && student.name))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      },
+      error: (err) => {
+        console.error('Failed to load students for broadcast recipient picker', err);
       }
     });
   }
@@ -247,5 +343,42 @@ export class BroadcastsComponent implements OnInit {
         this.deliverySummaries.set(result.id, `${delivered} sent or delivered${failed ? `, ${failed} failed` : ''}`);
       }
     });
+  }
+
+  private seedEditedDrafts(broadcasts: Broadcast[]): void {
+    for (const broadcast of broadcasts) {
+      const id = this.broadcastId(broadcast);
+      if (id && !this.editedDrafts.has(id)) {
+        this.editedDrafts.set(id, broadcast.draftedText || broadcast.originalText || '');
+      }
+    }
+  }
+
+  private fileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  private toStudentOption(student: ApiStudent): StudentOption | null {
+    const record = student as Record<string, unknown>;
+    const id = this.readText(record, ['_id', 'id']);
+    const name = this.readText(record, ['name']);
+    if (!id || !name) return null;
+
+    return {
+      id,
+      name,
+      className: this.readText(record, ['class', 'className']) || 'Unassigned',
+      parentName: this.readText(record, ['parentName']) || 'Parent'
+    };
+  }
+
+  private readText(record: Record<string, unknown>, keys: string[]): string {
+    for (const key of keys) {
+      const value = record[key];
+      if (value !== undefined && value !== null) return String(value);
+    }
+    return '';
   }
 }

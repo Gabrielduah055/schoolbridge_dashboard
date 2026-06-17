@@ -11,9 +11,9 @@
       <p>Draft or pending items</p>
     </article>
     <article class="comm-card metric-card">
-      <span>Failed or partial</span>
+      <span>Failed</span>
       <strong>{{ loading ? '-' : failedCount }}</strong>
-      <p>Needs delivery review</p>
+      <p>Broadcasts with no successful sends</p>
     </article>
   </div>
 
@@ -47,14 +47,33 @@
         <span>Class name</span>
         <input [(ngModel)]="draft.targetClass" placeholder="e.g. Basic 4" />
       </label>
-      <label class="comm-field" *ngIf="requiresRecipientPhone">
-        <span>Recipient phone</span>
-        <input [(ngModel)]="draft.recipientPhone" placeholder="e.g. 233..." />
+      <label class="comm-field" *ngIf="requiresStudentRecipient">
+        <span>Child</span>
+        <select [(ngModel)]="draft.recipientStudentId">
+          <option value="">Select child</option>
+          <option *ngFor="let student of students" [value]="student.id">
+            {{ student.name }} - {{ student.className }} / {{ student.parentName }}
+          </option>
+        </select>
       </label>
       <label class="comm-field full">
         <span>Message</span>
         <textarea [(ngModel)]="draft.originalText" placeholder="Write the broadcast message..."></textarea>
       </label>
+      <div class="attachment-picker full">
+        <div>
+          <span>Attachment</span>
+          <strong>{{ attachmentLabel }}</strong>
+        </div>
+        <input
+          #broadcastAttachment
+          type="file"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png"
+          (change)="onAttachmentSelected($event)"
+        />
+        <button class="comm-button-secondary" type="button" (click)="broadcastAttachment.click()">Choose file</button>
+        <button class="comm-button-secondary" type="button" *ngIf="selectedAttachment" (click)="clearAttachment(broadcastAttachment)">Remove</button>
+      </div>
       <div class="channel-checks">
         <label><input type="checkbox" [(ngModel)]="draft.telegram" /> Telegram</label>
         <span class="channel-placeholder">WhatsApp connection is not enabled yet</span>
@@ -101,6 +120,14 @@
             <td>
               <strong>{{ broadcast.title || 'Untitled broadcast' }}</strong>
               <p class="comm-muted">{{ broadcast.draftedText || broadcast.originalText }}</p>
+              <span class="attachment-chip" *ngIf="attachmentSummary(broadcast)">{{ attachmentSummary(broadcast) }}</span>
+              <label class="review-editor" *ngIf="broadcast.approvalStatus !== 'approved'">
+                <span>Review message</span>
+                <textarea
+                  [ngModel]="editableText(broadcast)"
+                  (ngModelChange)="setEditedDraft(broadcast, $event)"
+                ></textarea>
+              </label>
             </td>
             <td><span [class]="'status-badge ' + statusClass(broadcast.approvalStatus)">{{ broadcast.approvalStatus }}</span></td>
             <td>{{ audienceLabel(broadcast) }}</td>
@@ -113,7 +140,7 @@
             <td>{{ formatDate(broadcast.createdAt) }}</td>
             <td class="broadcast-actions">
               <button class="comm-button-secondary" type="button" *ngIf="hasPermission('broadcasts:approve')" [disabled]="broadcast.approvalStatus === 'approved' || actionId === broadcastId(broadcast)" (click)="approve(broadcast)">Approve</button>
-              <button class="comm-button" type="button" *ngIf="hasPermission('broadcasts:send')" [disabled]="broadcast.approvalStatus !== 'approved' || broadcast.status === 'sent' || actionId === broadcastId(broadcast)" (click)="send(broadcast)">Send</button>
+              <button class="comm-button" type="button" *ngIf="hasPermission('broadcasts:send')" [disabled]="!canSend(broadcast) || actionId === broadcastId(broadcast)" (click)="send(broadcast)">Send</button>
             </td>
           </tr>
         </tbody>
