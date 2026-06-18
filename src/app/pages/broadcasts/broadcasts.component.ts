@@ -2,13 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
-import { ApiService, ApiStudent, Broadcast, BroadcastMetrics, BroadcastRecipientPreview, MessageRecipient } from '../../core/services/api.service';
+import { ApiService, ApiStudent, Broadcast, BroadcastMetrics, BroadcastRecipientPreview, ClassDirectoryRow, MessageRecipient } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
 interface BroadcastDraftForm {
   title: string;
   audienceType: Broadcast['audienceType'];
   originalText: string;
+  classId: string;
   targetClass: string;
   recipientStudentId: string;
   recipientPhone: string;
@@ -37,6 +38,7 @@ export class BroadcastsComponent implements OnInit {
   actionMessage = '';
   broadcasts: Broadcast[] = [];
   students: StudentOption[] = [];
+  classes: ClassDirectoryRow[] = [];
   metrics: BroadcastMetrics | null = null;
   recipientCounts = new Map<string, number>();
   deliverySummaries = new Map<string, string>();
@@ -50,6 +52,7 @@ export class BroadcastsComponent implements OnInit {
     title: '',
     audienceType: 'whole_school',
     originalText: '',
+    classId: '',
     targetClass: '',
     recipientStudentId: '',
     recipientPhone: '',
@@ -95,6 +98,10 @@ export class BroadcastsComponent implements OnInit {
 
   get selectedStudent(): StudentOption | undefined {
     return this.students.find((student) => student.id === this.draft.recipientStudentId);
+  }
+
+  get selectedClass(): ClassDirectoryRow | undefined {
+    return this.classes.find((classItem) => (classItem._id || classItem.id) === this.draft.classId);
   }
 
   statusClass(value?: string | null): string {
@@ -152,8 +159,8 @@ export class BroadcastsComponent implements OnInit {
       return;
     }
 
-    if (this.requiresClass && !this.draft.targetClass.trim()) {
-      this.actionMessage = 'Enter the class name for this broadcast.';
+    if (this.requiresClass && !this.draft.classId && !this.draft.targetClass.trim()) {
+      this.actionMessage = 'Select the class for this broadcast.';
       return;
     }
 
@@ -171,6 +178,7 @@ export class BroadcastsComponent implements OnInit {
       audienceType: this.draft.audienceType,
       title: this.draft.title.trim(),
       originalText,
+      classId: this.draft.classId,
       targetClass: this.draft.targetClass.trim(),
       recipientStudentId: this.draft.recipientStudentId,
       recipientStudentName: this.selectedStudent?.name,
@@ -185,6 +193,7 @@ export class BroadcastsComponent implements OnInit {
           title: '',
           audienceType: 'whole_school',
           originalText: '',
+          classId: '',
           targetClass: '',
           recipientStudentId: '',
           recipientPhone: '',
@@ -204,8 +213,8 @@ export class BroadcastsComponent implements OnInit {
   }
 
   previewRecipients(): void {
-    if (this.requiresClass && !this.draft.targetClass.trim()) {
-      this.previewMessage = 'Enter the class name before previewing recipients.';
+    if (this.requiresClass && !this.draft.classId && !this.draft.targetClass.trim()) {
+      this.previewMessage = 'Select the class before previewing recipients.';
       return;
     }
 
@@ -218,6 +227,7 @@ export class BroadcastsComponent implements OnInit {
     this.previewMessage = 'Checking Telegram reachability...';
     this.api.previewBroadcastRecipients({
       audienceType: this.draft.audienceType,
+      classId: this.draft.classId,
       targetClass: this.draft.targetClass.trim(),
       recipientStudentId: this.draft.recipientStudentId,
       recipientPhone: this.draft.recipientPhone.trim(),
@@ -346,6 +356,7 @@ export class BroadcastsComponent implements OnInit {
     this.error = '';
     this.loadMetrics();
     this.loadStudents();
+    this.loadClasses();
     this.api.getBroadcasts().subscribe({
       next: (broadcasts) => {
         this.broadcasts = broadcasts;
@@ -382,6 +393,17 @@ export class BroadcastsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load students for broadcast recipient picker', err);
+      }
+    });
+  }
+
+  private loadClasses(): void {
+    this.api.getClasses().subscribe({
+      next: (classes) => {
+        this.classes = classes.filter((classItem) => classItem.active !== false);
+      },
+      error: (err) => {
+        console.error('Failed to load classes for broadcast selector', err);
       }
     });
   }
