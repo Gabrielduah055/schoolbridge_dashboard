@@ -46,38 +46,13 @@
   align-items: center;
 }
 
-.saved-note {
-  color: var(--sb-success);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.academic-forms {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
-  gap: 10px;
-  align-items: end;
-}
-
-.academic-forms label {
-  display: grid;
-  gap: 5px;
-}
-
-.academic-forms span,
 .settings-grid p {
   color: var(--sb-muted);
   font-size: 12px;
 }
 
-.check-row {
-  grid-template-columns: auto 1fr;
-  align-items: center;
-}
-
 @media (max-width: 720px) {
-  .settings-grid,
-  .academic-forms {
+  .settings-grid {
     grid-template-columns: 1fr;
   }
 }

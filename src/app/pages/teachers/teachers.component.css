@@ -7,21 +7,6 @@
   color: var(--sb-danger);
 }
 
-.assignment-panel {
-  display: grid;
-  gap: 10px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--sb-border);
-}
-
-.assignment-panel label {
-  display: grid;
-  grid-template-columns: 120px repeat(3, minmax(0, 1fr)) auto;
-  gap: 8px;
-  align-items: center;
-}
-
-.assignment-panel span,
 .simple-note {
   color: var(--sb-muted);
   font-size: 12px;
@@ -31,16 +16,20 @@
   margin: 5px 0 0;
 }
 
+.import-button {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.import-button input {
+  display: none;
+}
+
 .text-link.inline {
   margin-left: 8px;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
-}
-
-@media (max-width: 900px) {
-  .assignment-panel label {
-    grid-template-columns: 1fr;
-  }
 }

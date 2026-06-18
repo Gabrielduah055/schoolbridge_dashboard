@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService, ClassDirectoryRow } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -8,18 +7,17 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-classes-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, RouterLink],
   templateUrl: './classes.component.html',
   styleUrl: './classes.component.css'
 })
 export class ClassesComponent implements OnInit {
   loading = true;
-  saving = false;
+  importing = false;
   error = '';
   actionMessage = '';
-  sourceLabel = 'Academic class directory';
+  sourceLabel = 'Class communication directory';
   classes: ClassDirectoryRow[] = [];
-  newClass = { name: '', level: '', section: '' };
 
   constructor(
     private readonly api: ApiService,
@@ -42,44 +40,30 @@ export class ClassesComponent implements OnInit {
     return this.auth.hasPermission(permission);
   }
 
-  createClass(): void {
-    const name = this.newClass.name.trim();
-    if (!name || this.saving) return;
-    this.saving = true;
-    this.actionMessage = 'Creating class...';
-    this.api.createClass({
-      name,
-      level: this.newClass.level.trim(),
-      section: this.newClass.section.trim()
-    }).subscribe({
-      next: () => {
-        this.newClass = { name: '', level: '', section: '' };
-        this.saving = false;
-        this.actionMessage = 'Class created.';
+  importClasses(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    this.importing = true;
+    this.actionMessage = 'Importing class directory...';
+
+    this.api.importClasses(formData).subscribe({
+      next: (result) => {
+        this.actionMessage = `Class import complete. ${result.imported} added, ${result.updated} updated, ${result.skipped} skipped.`;
+        this.importing = false;
+        input.value = '';
         this.loadClasses();
       },
       error: (err) => {
-        console.error('Failed to create class', err);
-        this.saving = false;
-        this.actionMessage = 'Could not create class.';
+        console.error('Failed to import classes', err);
+        this.actionMessage = 'Class import failed. Please check the file columns.';
+        this.importing = false;
+        input.value = '';
       }
     });
-  }
-
-  classId(classItem: ClassDirectoryRow): string {
-    return classItem._id || classItem.id || '';
-  }
-
-  teacherName(classItem: ClassDirectoryRow): string {
-    const teacher = classItem.classTeacher?.teacherId as any;
-    return teacher?.fullName || teacher?.name || classItem.teacher || 'Not assigned';
-  }
-
-  warningText(classItem: ClassDirectoryRow): string {
-    if (classItem.warnings?.noActiveAcademicYear) return 'No active academic year is set. Class relationships and broadcasts may not work correctly.';
-    if (classItem.warnings?.noClassTeacher) return 'No active class teacher assigned.';
-    if (classItem.warnings?.noActiveStudents) return 'No active student enrollments found for this class.';
-    return '';
   }
 
   private loadClasses(): void {

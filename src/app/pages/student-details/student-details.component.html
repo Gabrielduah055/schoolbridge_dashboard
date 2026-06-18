@@ -110,30 +110,6 @@
       </div>
     </section>
 
-    <section class="card">
-      <h3>Academic Enrollment</h3>
-      <div class="info-grid">
-        <div>
-          <span>Current academic year</span>
-          <strong>{{ enrollmentYear(currentEnrollment) }}</strong>
-        </div>
-        <div>
-          <span>Current class</span>
-          <strong>{{ enrollmentClassName(currentEnrollment) }}</strong>
-        </div>
-        <div>
-          <span>Status</span>
-          <strong>{{ currentEnrollment?.status || 'No active enrollment' }}</strong>
-        </div>
-      </div>
-      <div class="record-grid" *ngIf="enrollments.length > 0">
-        <div *ngFor="let enrollment of enrollments">
-          <span>{{ enrollmentYear(enrollment) }}</span>
-          <strong>{{ enrollmentClassName(enrollment) }} - {{ enrollment.status }}</strong>
-        </div>
-      </div>
-    </section>
-
     <section class="card record-card">
       <h3>All Student Details</h3>
       <p *ngIf="rawRows.length === 0" class="empty-copy">No additional backend fields were returned for this student.</p>
