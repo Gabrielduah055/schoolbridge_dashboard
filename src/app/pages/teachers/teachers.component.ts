@@ -1,36 +1,48 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ApiService, ApiStudent, TeacherDirectoryRow } from '../../core/services/api.service';
+import { forkJoin } from 'rxjs';
+import { AcademicYear, ApiService, ClassDirectoryRow, Subject, TeacherAssignment, TeacherDirectoryRow } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
-interface TeacherRow {
-  name: string;
-  classes: string[];
-  students: number;
-  phone: string;
-  email: string;
-  subject: string;
-  channelIdentityStatus: string;
-  lastConversationAt: string | null;
+interface TeacherRow extends TeacherDirectoryRow {
+  classTeacherAssignments: TeacherAssignment[];
+  subjectTeacherAssignments: TeacherAssignment[];
 }
 
 @Component({
   selector: 'app-teachers-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './teachers.component.html',
   styleUrl: './teachers.component.css'
 })
 export class TeachersComponent implements OnInit {
   loading = true;
+  saving = false;
   error = '';
+  actionMessage = '';
   sourceLabel = 'Teacher directory';
   teachers: TeacherRow[] = [];
+  classes: ClassDirectoryRow[] = [];
+  subjects: Subject[] = [];
+  activeYear: AcademicYear | null = null;
 
-  constructor(private readonly api: ApiService) {}
+  classTeacherForm = { teacherId: '', classId: '' };
+  subjectTeacherForm = { teacherId: '', classId: '', subjectId: '' };
+
+  constructor(
+    private readonly api: ApiService,
+    private readonly auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadTeachers();
+  }
+
+  hasPermission(permission: string): boolean {
+    return this.auth.hasPermission(permission);
   }
 
   formatDate(value?: string | null): string {
@@ -40,84 +52,104 @@ export class TeachersComponent implements OnInit {
     return date.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
+  teacherId(teacher: TeacherDirectoryRow): string {
+    return teacher._id || teacher.id || '';
+  }
+
+  className(value: unknown): string {
+    const record = value as any;
+    return record?.displayName || record?.name || record?.className || '-';
+  }
+
+  subjectName(assignment: TeacherAssignment): string {
+    const subject = assignment.subjectId as any;
+    return subject?.name || assignment.subjectName || 'Subject';
+  }
+
+  assignClassTeacher(): void {
+    if (!this.activeYear || !this.classTeacherForm.teacherId || !this.classTeacherForm.classId || this.saving) return;
+    this.saving = true;
+    this.api.replaceClassTeacher({
+      academicYearId: this.activeYear._id || this.activeYear.id || '',
+      newTeacherId: this.classTeacherForm.teacherId,
+      classId: this.classTeacherForm.classId,
+      reason: 'Assigned from dashboard'
+    }).subscribe({
+      next: () => {
+        this.saving = false;
+        this.actionMessage = 'Class teacher assignment saved.';
+        this.loadTeachers();
+      },
+      error: (err) => {
+        console.error('Failed to assign class teacher', err);
+        this.saving = false;
+        this.actionMessage = 'Could not assign class teacher.';
+      }
+    });
+  }
+
+  assignSubjectTeacher(): void {
+    if (!this.activeYear || !this.subjectTeacherForm.teacherId || !this.subjectTeacherForm.classId || !this.subjectTeacherForm.subjectId || this.saving) return;
+    this.saving = true;
+    this.api.assignSubjectTeacher({
+      academicYearId: this.activeYear._id || this.activeYear.id || '',
+      teacherId: this.subjectTeacherForm.teacherId,
+      classId: this.subjectTeacherForm.classId,
+      subjectId: this.subjectTeacherForm.subjectId
+    }).subscribe({
+      next: () => {
+        this.saving = false;
+        this.actionMessage = 'Subject teacher assignment saved.';
+        this.loadTeachers();
+      },
+      error: (err) => {
+        console.error('Failed to assign subject teacher', err);
+        this.saving = false;
+        this.actionMessage = 'Could not assign subject teacher.';
+      }
+    });
+  }
+
+  endAssignment(assignment: TeacherAssignment): void {
+    const id = assignment._id || assignment.id;
+    if (!id) return;
+    this.api.endTeacherAssignment(id).subscribe({
+      next: () => this.loadTeachers(),
+      error: (err) => {
+        console.error('Failed to end assignment', err);
+        this.actionMessage = 'Could not end assignment.';
+      }
+    });
+  }
+
   private loadTeachers(): void {
-    this.api.getTeachers().subscribe({
-      next: (teachers) => {
-        if (teachers.length > 0) {
-          this.teachers = teachers.map((teacher) => this.fromDirectory(teacher));
-          this.loading = false;
-          return;
-        }
-        this.loadFromStudents('');
+    this.loading = true;
+    forkJoin({
+      teachers: this.api.getTeachers(),
+      classes: this.api.getClasses(),
+      subjects: this.api.getSubjects(),
+      activeYear: this.api.getActiveAcademicYear(),
+      assignments: this.api.getTeacherAssignments({ isActive: 'true' })
+    }).subscribe({
+      next: ({ teachers, classes, subjects, activeYear, assignments }) => {
+        this.classes = classes;
+        this.subjects = subjects;
+        this.activeYear = activeYear;
+        this.teachers = teachers.map((teacher) => {
+          const id = this.teacherId(teacher);
+          return {
+            ...teacher,
+            classTeacherAssignments: assignments.filter((assignment) => (assignment.teacherId as any)?._id === id && assignment.assignmentType === 'class_teacher'),
+            subjectTeacherAssignments: assignments.filter((assignment) => (assignment.teacherId as any)?._id === id && assignment.assignmentType === 'subject_teacher')
+          };
+        });
+        this.loading = false;
       },
       error: (err) => {
         console.error('Failed to load teacher directory', err);
-        this.loadFromStudents('Could not load teacher directory. Showing student/class fallback.');
-      }
-    });
-  }
-
-  private loadFromStudents(message: string): void {
-    this.sourceLabel = 'Student/class fallback';
-    this.error = message;
-    this.api.getStudents().subscribe({
-      next: (students) => {
-        this.teachers = this.toTeachers(students);
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load teacher context', err);
-        this.error = 'Could not load teacher context. Check the admin API key in Settings.';
+        this.error = 'Could not load teacher assignments.';
         this.loading = false;
       }
     });
-  }
-
-  private fromDirectory(teacher: TeacherDirectoryRow): TeacherRow {
-    return {
-      name: teacher.name || 'Teacher',
-      classes: teacher.assignedClasses,
-      students: 0,
-      phone: teacher.phone,
-      email: teacher.email,
-      subject: teacher.subject,
-      channelIdentityStatus: teacher.channelIdentityStatus,
-      lastConversationAt: teacher.lastConversationAt
-    };
-  }
-
-  private toTeachers(students: ApiStudent[]): TeacherRow[] {
-    const rows = new Map<string, TeacherRow>();
-    for (const student of students) {
-      const teacherName = this.text(student, ['teacherName', 'classTeacher', 'teacher.name']);
-      if (!teacherName) continue;
-      const row = rows.get(teacherName) ?? {
-        name: teacherName,
-        classes: [],
-        students: 0,
-        phone: this.text(student, ['teacherPhone', 'teacher.phone']),
-        email: this.text(student, ['teacherEmail', 'teacher.email']),
-        subject: '',
-        channelIdentityStatus: 'unknown',
-        lastConversationAt: null
-      };
-      const className = this.text(student, ['class', 'className', 'grade']) || 'Unassigned';
-      if (!row.classes.includes(className)) row.classes.push(className);
-      row.students += 1;
-      rows.set(teacherName, row);
-    }
-    return Array.from(rows.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  private text(source: unknown, keys: string[]): string {
-    for (const key of keys) {
-      const value = key.split('.').reduce<unknown>((target, part) => {
-        if (!target || typeof target !== 'object') return undefined;
-        return (target as Record<string, unknown>)[part];
-      }, source);
-      if (typeof value === 'string' && value.trim()) return value.trim();
-      if (typeof value === 'number') return String(value);
-    }
-    return '';
   }
 }

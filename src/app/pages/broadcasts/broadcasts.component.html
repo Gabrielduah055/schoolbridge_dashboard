@@ -44,8 +44,14 @@
         </select>
       </label>
       <label class="comm-field" *ngIf="requiresClass">
-        <span>Class name</span>
-        <input [(ngModel)]="draft.targetClass" placeholder="e.g. Basic 4" />
+        <span>Class</span>
+        <select [(ngModel)]="draft.classId" *ngIf="classes.length > 0">
+          <option value="">Select class</option>
+          <option *ngFor="let classItem of classes" [value]="classItem._id || classItem.id">
+            {{ classItem.displayName || classItem.className }}
+          </option>
+        </select>
+        <input *ngIf="classes.length === 0" [(ngModel)]="draft.targetClass" placeholder="e.g. Basic 4" />
       </label>
       <label class="comm-field" *ngIf="requiresStudentRecipient">
         <span>Child</span>

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { IconName, getIconPath } from '../../core/navigation';
-import { ApiService, ApiStudent } from '../../core/services/api.service';
+import { ApiService, ApiStudent, StudentEnrollment } from '../../core/services/api.service';
 
 interface DetailStat {
   label: string;
@@ -61,6 +61,8 @@ export class StudentDetailsComponent implements OnInit {
   student: StudentDetails | null = null;
   rawRows: DetailRow[] = [];
   stats: DetailStat[] = [];
+  enrollments: StudentEnrollment[] = [];
+  currentEnrollment: StudentEnrollment | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -93,6 +95,7 @@ export class StudentDetailsComponent implements OnInit {
         this.student = this.toDetails(match);
         this.rawRows = this.flattenStudent(match);
         this.stats = this.buildStats(match, this.student);
+        this.loadEnrollments(this.getText(match, ['_id', 'id']));
         this.loading = false;
       },
       error: (err) => {
@@ -101,6 +104,16 @@ export class StudentDetailsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  enrollmentClassName(enrollment: StudentEnrollment | null): string {
+    const classRecord = enrollment?.classId as any;
+    return classRecord?.displayName || classRecord?.name || classRecord?.className || '-';
+  }
+
+  enrollmentYear(enrollment: StudentEnrollment | null): string {
+    const year = enrollment?.academicYearId as any;
+    return year?.name || '-';
   }
 
   private toDetails(raw: ApiStudent): StudentDetails {
@@ -137,6 +150,18 @@ export class StudentDetailsComponent implements OnInit {
       { label: 'Attendance', value: `${this.getNumber(raw, ['attendance', 'attendancePercent']) || 0}%`, note: 'Recorded attendance', icon: 'attendance', tone: 'emerald' },
       { label: 'Guardian', value: details.guardian, note: details.phone, icon: 'teachers', tone: 'blue' }
     ];
+  }
+
+  private loadEnrollments(studentId: string): void {
+    if (!studentId) return;
+    this.api.getStudentCurrentEnrollment(studentId).subscribe({
+      next: (enrollment) => this.currentEnrollment = enrollment,
+      error: () => this.currentEnrollment = null
+    });
+    this.api.getStudentEnrollments(studentId).subscribe({
+      next: (enrollments) => this.enrollments = enrollments,
+      error: () => this.enrollments = []
+    });
   }
 
   private flattenStudent(source: unknown, prefix = ''): DetailRow[] {

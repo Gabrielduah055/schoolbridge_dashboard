@@ -1,110 +1,100 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ApiService, ApiStudent, ClassDirectoryRow } from '../../core/services/api.service';
-
-interface ClassRow {
-  name: string;
-  students: number;
-  parents: number;
-  teacher: string;
-  recentBroadcasts: number;
-}
+import { ApiService, ClassDirectoryRow } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-classes-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './classes.component.html',
   styleUrl: './classes.component.css'
 })
 export class ClassesComponent implements OnInit {
   loading = true;
+  saving = false;
   error = '';
-  sourceLabel = 'Class directory';
-  classes: ClassRow[] = [];
+  actionMessage = '';
+  sourceLabel = 'Academic class directory';
+  classes: ClassDirectoryRow[] = [];
+  newClass = { name: '', level: '', section: '' };
 
-  constructor(private readonly api: ApiService) {}
+  constructor(
+    private readonly api: ApiService,
+    private readonly auth: AuthService
+  ) {}
 
   get totalStudents(): number {
-    return this.classes.reduce((total, classItem) => total + classItem.students, 0);
+    return this.classes.reduce((total, classItem) => total + (classItem.studentCount || 0), 0);
   }
 
   get totalParents(): number {
-    return this.classes.reduce((total, classItem) => total + classItem.parents, 0);
+    return this.classes.reduce((total, classItem) => total + (classItem.parentContactCount || 0), 0);
   }
 
   ngOnInit(): void {
     this.loadClasses();
   }
 
+  hasPermission(permission: string): boolean {
+    return this.auth.hasPermission(permission);
+  }
+
+  createClass(): void {
+    const name = this.newClass.name.trim();
+    if (!name || this.saving) return;
+    this.saving = true;
+    this.actionMessage = 'Creating class...';
+    this.api.createClass({
+      name,
+      level: this.newClass.level.trim(),
+      section: this.newClass.section.trim()
+    }).subscribe({
+      next: () => {
+        this.newClass = { name: '', level: '', section: '' };
+        this.saving = false;
+        this.actionMessage = 'Class created.';
+        this.loadClasses();
+      },
+      error: (err) => {
+        console.error('Failed to create class', err);
+        this.saving = false;
+        this.actionMessage = 'Could not create class.';
+      }
+    });
+  }
+
+  classId(classItem: ClassDirectoryRow): string {
+    return classItem._id || classItem.id || '';
+  }
+
+  teacherName(classItem: ClassDirectoryRow): string {
+    const teacher = classItem.classTeacher?.teacherId as any;
+    return teacher?.fullName || teacher?.name || classItem.teacher || 'Not assigned';
+  }
+
+  warningText(classItem: ClassDirectoryRow): string {
+    if (classItem.warnings?.noActiveAcademicYear) return 'No active academic year is set. Class relationships and broadcasts may not work correctly.';
+    if (classItem.warnings?.noClassTeacher) return 'No active class teacher assigned.';
+    if (classItem.warnings?.noActiveStudents) return 'No active student enrollments found for this class.';
+    return '';
+  }
+
   private loadClasses(): void {
+    this.loading = true;
+    this.error = '';
     this.api.getClasses().subscribe({
       next: (classes) => {
-        if (classes.length > 0) {
-          this.classes = classes.map((classItem) => this.fromDirectory(classItem));
-          this.loading = false;
-          return;
-        }
-        this.loadFromStudents('');
+        this.classes = classes;
+        this.loading = false;
       },
       error: (err) => {
         console.error('Failed to load class directory', err);
-        this.loadFromStudents('Could not load class directory. Showing student fallback.');
-      }
-    });
-  }
-
-  private loadFromStudents(message: string): void {
-    this.sourceLabel = 'Student fallback';
-    this.error = message;
-    this.api.getStudents().subscribe({
-      next: (students) => {
-        this.classes = this.toClasses(students);
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load classes', err);
-        this.error = 'Could not load class data. Check the admin API key in Settings.';
+        this.error = 'Could not load class directory.';
         this.loading = false;
       }
     });
-  }
-
-  private fromDirectory(classItem: ClassDirectoryRow): ClassRow {
-    return {
-      name: classItem.className,
-      students: classItem.studentCount,
-      parents: classItem.parentContactCount,
-      teacher: classItem.teacher,
-      recentBroadcasts: classItem.recentBroadcastCount
-    };
-  }
-
-  private toClasses(students: ApiStudent[]): ClassRow[] {
-    const rows = new Map<string, { students: number; phones: Set<string>; teacher: string }>();
-    for (const student of students) {
-      const className = this.text(student, ['class', 'className', 'grade']) || 'Unassigned';
-      const row = rows.get(className) ?? { students: 0, phones: new Set<string>(), teacher: this.text(student, ['teacherName', 'classTeacher', 'teacher.name']) || 'Not assigned' };
-      row.students += 1;
-      const phone = this.text(student, ['parentPhone', 'guardianPhone', 'phone']);
-      if (phone) row.phones.add(phone);
-      rows.set(className, row);
-    }
-    return Array.from(rows.entries())
-      .map(([name, row]) => ({ name, students: row.students, parents: row.phones.size, teacher: row.teacher, recentBroadcasts: 0 }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  private text(source: unknown, keys: string[]): string {
-    for (const key of keys) {
-      const value = key.split('.').reduce<unknown>((target, part) => {
-        if (!target || typeof target !== 'object') return undefined;
-        return (target as Record<string, unknown>)[part];
-      }, source);
-      if (typeof value === 'string' && value.trim()) return value.trim();
-      if (typeof value === 'number') return String(value);
-    }
-    return '';
   }
 }
