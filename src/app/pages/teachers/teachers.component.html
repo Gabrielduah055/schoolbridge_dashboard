@@ -11,9 +11,14 @@
       <p>Can receive bot messages</p>
     </article>
     <article class="comm-card metric-card">
-      <span>Class references</span>
+      <span>Class coverage</span>
       <strong>{{ loading ? '-' : classReferenceCount }}</strong>
-      <p>From imported class directory</p>
+      <p>Teachers with class assignments</p>
+    </article>
+    <article class="comm-card metric-card">
+      <span>Teaching areas</span>
+      <strong>{{ loading ? '-' : subjectCount }}</strong>
+      <p>Teachers with subjects listed</p>
     </article>
   </div>
 
@@ -21,7 +26,7 @@
     <div class="comm-card-header">
       <div>
         <h2>Teachers</h2>
-        <p>Teacher contacts used for Telegram routing and class communication.</p>
+        <p>Teacher contacts, teaching areas, and class routing context.</p>
       </div>
       <label class="comm-button-secondary import-button" *ngIf="hasPermission('teachers:manage')">
         {{ importing ? 'Importing...' : 'Import teachers' }}
@@ -36,6 +41,7 @@
       <div>
         <strong>No teacher records yet</strong>
         <p>Import the teacher contact sheet from the school to populate this directory.</p>
+        <p class="simple-note">Supported columns: Teacher Name, Phone, Email, Subject, Assigned Classes.</p>
       </div>
     </div>
 
@@ -44,9 +50,10 @@
         <thead>
           <tr>
             <th>Teacher</th>
+            <th>Teaches</th>
+            <th>Assigned classes</th>
             <th>Phone</th>
             <th>Email</th>
-            <th>Classes</th>
             <th>Telegram</th>
             <th>Last conversation</th>
           </tr>
@@ -54,9 +61,10 @@
         <tbody>
           <tr *ngFor="let teacher of teachers">
             <td><strong>{{ teacher.name }}</strong></td>
+            <td>{{ teacher.subject || 'Not listed' }}</td>
+            <td>{{ teacher.assignedClasses.length ? teacher.assignedClasses.join(', ') : 'Not assigned' }}</td>
             <td>{{ teacher.phone || '-' }}</td>
             <td>{{ teacher.email || '-' }}</td>
-            <td>{{ teacher.assignedClasses.length ? teacher.assignedClasses.join(', ') : 'Not assigned' }}</td>
             <td><span class="channel-badge">{{ teacher.channelIdentityStatus }}</span></td>
             <td>{{ formatDate(teacher.lastConversationAt) }}</td>
           </tr>

@@ -12,7 +12,7 @@ export interface ApiKnowledgeItem {
 }
 
 export type CommunicationChannel = 'telegram' | 'whatsapp' | 'dashboard';
-export type AdminRole = 'super_admin' | 'headmaster' | 'school_admin' | 'teacher';
+export type AdminRole = 'headmaster';
 export type ParticipantRole = 'parent' | 'teacher' | 'admin' | AdminRole | 'visitor' | 'unregistered';
 
 export interface ChannelAccount {

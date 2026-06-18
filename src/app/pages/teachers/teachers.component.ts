@@ -35,6 +35,10 @@ export class TeachersComponent implements OnInit {
     return this.teachers.filter((teacher) => teacher.assignedClasses.length > 0).length;
   }
 
+  get subjectCount(): number {
+    return this.teachers.filter((teacher) => Boolean(teacher.subject?.trim())).length;
+  }
+
   hasPermission(permission: string): boolean {
     return this.auth.hasPermission(permission);
   }

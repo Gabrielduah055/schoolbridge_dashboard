@@ -32,6 +32,18 @@ export class ParentsComponent implements OnInit {
     this.loadParents();
   }
 
+  get telegramLinkedCount(): number {
+    return this.parents.filter((parent) => parent.channelIdentityStatus === 'connected').length;
+  }
+
+  get linkedStudentCount(): number {
+    return this.parents.reduce((total, parent) => total + parent.students.length, 0);
+  }
+
+  get classCount(): number {
+    return new Set(this.parents.flatMap((parent) => parent.classes).filter(Boolean)).size;
+  }
+
   formatDate(value?: string | null): string {
     if (!value) return '-';
     const date = new Date(value);

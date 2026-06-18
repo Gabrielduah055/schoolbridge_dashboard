@@ -6,14 +6,14 @@
       <p>{{ sourceLabel }}</p>
     </article>
     <article class="comm-card metric-card">
-      <span>Reachable by phone</span>
-      <strong>{{ loading ? '-' : parents.length }}</strong>
-      <p>Primary communication identity</p>
+      <span>Telegram linked</span>
+      <strong>{{ loading ? '-' : telegramLinkedCount }}</strong>
+      <p>Can receive bot messages</p>
     </article>
     <article class="comm-card metric-card">
-      <span>Conversations</span>
-      <strong>-</strong>
-      <p>Use the shared inbox for live threads</p>
+      <span>Students covered</span>
+      <strong>{{ loading ? '-' : linkedStudentCount }}</strong>
+      <p>{{ loading ? 'Loading classes' : classCount + ' classes represented' }}</p>
     </article>
   </div>
 
@@ -21,7 +21,7 @@
     <div class="comm-card-header">
       <div>
         <h2>Parents</h2>
-        <p>Parent contacts available for communication</p>
+        <p>Guardian contacts generated from imported student records.</p>
       </div>
       <a class="text-link" routerLink="/conversations">View conversations</a>
     </div>
@@ -31,7 +31,7 @@
     <div *ngIf="!loading && parents.length === 0" class="empty-state">
       <div>
         <strong>No parent contacts yet</strong>
-        <p>Import students with parent phone numbers to populate this view.</p>
+        <p>Import the student sheet with parent names, phone numbers, emails, and classes to populate this view.</p>
       </div>
     </div>
 
