@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { catchError, forkJoin, map, of } from 'rxjs';
-import { ApiService, ApiStudent, Broadcast, BroadcastMetrics, MessageRecipient } from '../../core/services/api.service';
+import { ApiService, ApiStudent, Broadcast, BroadcastMetrics, BroadcastRecipientPreview, MessageRecipient } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
 interface BroadcastDraftForm {
@@ -42,6 +42,9 @@ export class BroadcastsComponent implements OnInit {
   deliverySummaries = new Map<string, string>();
   editedDrafts = new Map<string, string>();
   selectedAttachment: File | null = null;
+  preview: BroadcastRecipientPreview | null = null;
+  previewLoading = false;
+  previewMessage = '';
 
   draft: BroadcastDraftForm = {
     title: '',
@@ -63,7 +66,7 @@ export class BroadcastsComponent implements OnInit {
   }
 
   get sentCount(): number {
-    return this.metrics?.sentTotal ?? this.broadcasts.filter((broadcast) => ['sent', 'partial', 'partially_failed'].includes(broadcast.status)).length;
+    return this.metrics?.sentTotal ?? this.broadcasts.filter((broadcast) => ['sent', 'partially_failed'].includes(broadcast.status)).length;
   }
 
   get pendingApprovalCount(): number {
@@ -131,7 +134,11 @@ export class BroadcastsComponent implements OnInit {
   attachmentSummary(broadcast: Broadcast): string {
     const count = broadcast.attachments?.length ?? 0;
     if (count === 0) return '';
-    return count === 1 ? `1 attachment: ${broadcast.attachments?.[0]?.originalName || 'document'}` : `${count} attachments`;
+    if (count === 1) {
+      const attachment = broadcast.attachments?.[0];
+      return `${attachment?.originalName || 'document'} - ${attachment?.mimeType || 'file'} - ${this.fileSize(attachment?.size || 0)}`;
+    }
+    return `${count} attachments`;
   }
 
   hasPermission(permission: string): boolean {
@@ -161,7 +168,6 @@ export class BroadcastsComponent implements OnInit {
     this.saving = true;
     this.actionMessage = 'Creating draft...';
     this.api.createBroadcastDraft({
-      createdByRole: 'admin',
       audienceType: this.draft.audienceType,
       title: this.draft.title.trim(),
       originalText,
@@ -185,12 +191,50 @@ export class BroadcastsComponent implements OnInit {
           telegram: true
         };
         this.selectedAttachment = null;
+        this.preview = null;
+        this.previewMessage = '';
         this.loadBroadcasts();
       },
       error: (err) => {
         console.error('Failed to create broadcast draft', err);
         this.saving = false;
         this.actionMessage = 'Could not create the broadcast draft.';
+      }
+    });
+  }
+
+  previewRecipients(): void {
+    if (this.requiresClass && !this.draft.targetClass.trim()) {
+      this.previewMessage = 'Enter the class name before previewing recipients.';
+      return;
+    }
+
+    if (this.requiresStudentRecipient && !this.draft.recipientStudentId) {
+      this.previewMessage = 'Select the child before previewing recipients.';
+      return;
+    }
+
+    this.previewLoading = true;
+    this.previewMessage = 'Checking Telegram reachability...';
+    this.api.previewBroadcastRecipients({
+      audienceType: this.draft.audienceType,
+      targetClass: this.draft.targetClass.trim(),
+      recipientStudentId: this.draft.recipientStudentId,
+      recipientPhone: this.draft.recipientPhone.trim(),
+      channels: this.draft.telegram ? ['telegram'] : []
+    }).subscribe({
+      next: (preview) => {
+        this.preview = preview;
+        this.previewLoading = false;
+        this.previewMessage = preview.reachableNow === 0
+          ? 'No selected contacts can receive this broadcast on Telegram right now.'
+          : `${preview.reachableNow} of ${preview.totalContacts} contacts can receive this broadcast now.`;
+      },
+      error: (err) => {
+        console.error('Failed to preview broadcast recipients', err);
+        this.preview = null;
+        this.previewLoading = false;
+        this.previewMessage = 'Could not preview recipients.';
       }
     });
   }
@@ -218,7 +262,27 @@ export class BroadcastsComponent implements OnInit {
 
   canSend(broadcast: Broadcast): boolean {
     return broadcast.approvalStatus === 'approved' &&
-      !['sent', 'partial', 'partially_failed', 'sending'].includes(broadcast.status);
+      !['sent', 'partially_failed', 'failed', 'sending'].includes(broadcast.status);
+  }
+
+  statusExplanation(broadcast: Broadcast): string {
+    if (broadcast.status === 'partially_failed') {
+      return 'Some recipients received this broadcast, but others could not be reached.';
+    }
+    if (broadcast.status === 'failed') {
+      return 'No recipients were reached, or sending failed completely.';
+    }
+    if (broadcast.status === 'approved') {
+      return 'Approved and ready to send.';
+    }
+    return '';
+  }
+
+  auditLine(label: string, name?: string, role?: string, date?: string | null): string {
+    if (!name) return '';
+    const roleText = role ? ` (${role})` : '';
+    const dateText = date ? ` - ${this.formatDate(date)}` : '';
+    return `${label} ${name}${roleText}${dateText}`;
   }
 
   onAttachmentSelected(event: Event): void {
@@ -262,7 +326,7 @@ export class BroadcastsComponent implements OnInit {
         this.recipientCounts.set(id, updated.deliverySummary.totalRecipients);
         this.deliverySummaries.set(
           id,
-          `${updated.deliverySummary.sentCount} sent, ${updated.deliverySummary.failedCount} failed, ${updated.deliverySummary.pendingCount} pending`
+          `Sent: ${updated.deliverySummary.sentCount} / Failed: ${updated.deliverySummary.failedCount + updated.deliverySummary.pendingCount} / Total: ${updated.deliverySummary.totalRecipients}`
         );
         this.actionId = '';
         this.actionMessage = 'Broadcast send completed.';
@@ -291,7 +355,7 @@ export class BroadcastsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load broadcasts', err);
-        this.error = 'Could not load broadcasts. Check the admin API key in Settings.';
+        this.error = 'Could not load broadcasts. Please sign in again or check your permissions.';
         this.loading = false;
       }
     });
@@ -340,7 +404,8 @@ export class BroadcastsComponent implements OnInit {
         this.recipientCounts.set(result.id, result.recipients.length);
         const failed = result.recipients.filter((recipient) => recipient.status === 'failed').length;
         const delivered = result.recipients.filter((recipient) => ['sent', 'delivered', 'read'].includes(recipient.status)).length;
-        this.deliverySummaries.set(result.id, `${delivered} sent or delivered${failed ? `, ${failed} failed` : ''}`);
+        const skipped = result.recipients.filter((recipient) => recipient.status === 'skipped').length;
+        this.deliverySummaries.set(result.id, `Sent: ${delivered} / Failed: ${failed + skipped} / Total: ${result.recipients.length}`);
       }
     });
   }

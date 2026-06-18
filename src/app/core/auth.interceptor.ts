@@ -1,7 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = localStorage.getItem('schoolbridge_auth_token') || '';
+  const token = sessionStorage.getItem('schoolbridge_auth_token') || '';
   if (!token) return next(req);
 
   return next(req.clone({

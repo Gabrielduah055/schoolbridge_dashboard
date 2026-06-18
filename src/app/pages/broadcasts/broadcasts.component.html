@@ -80,6 +80,38 @@
       </div>
     </div>
 
+    <div class="preview-actions">
+      <button class="comm-button-secondary" type="button" [disabled]="previewLoading" (click)="previewRecipients()">
+        {{ previewLoading ? 'Previewing...' : 'Preview recipients' }}
+      </button>
+      <span *ngIf="previewMessage">{{ previewMessage }}</span>
+    </div>
+
+    <div class="recipient-preview" *ngIf="preview">
+      <div>
+        <span>Total contacts</span>
+        <strong>{{ preview.totalContacts }}</strong>
+      </div>
+      <div>
+        <span>Telegram linked</span>
+        <strong>{{ preview.telegramReachable }}</strong>
+      </div>
+      <div>
+        <span>Not linked</span>
+        <strong>{{ preview.telegramMissing }}</strong>
+      </div>
+      <div>
+        <span>Will receive now</span>
+        <strong>{{ preview.reachableNow }}</strong>
+      </div>
+      <p class="preview-warning" *ngIf="preview.reachableNow < preview.totalContacts && preview.reachableNow > 0">
+        Only {{ preview.reachableNow }} out of {{ preview.totalContacts }} contacts can receive this broadcast on Telegram now. The others have not connected to the school bot yet.
+      </p>
+      <p class="preview-warning danger" *ngIf="preview.reachableNow === 0">
+        No recipients can receive this broadcast on Telegram now.
+      </p>
+    </div>
+
     <p class="action-message" *ngIf="actionMessage">{{ actionMessage }}</p>
   </section>
 
@@ -121,6 +153,12 @@
               <strong>{{ broadcast.title || 'Untitled broadcast' }}</strong>
               <p class="comm-muted">{{ broadcast.draftedText || broadcast.originalText }}</p>
               <span class="attachment-chip" *ngIf="attachmentSummary(broadcast)">{{ attachmentSummary(broadcast) }}</span>
+              <p class="audit-line" *ngIf="auditLine('Created by', broadcast.createdByName, broadcast.createdByRole, broadcast.createdAt)">
+                {{ auditLine('Created by', broadcast.createdByName, broadcast.createdByRole, broadcast.createdAt) }}
+              </p>
+              <p class="audit-line" *ngIf="auditLine('Edited by', broadcast.lastEditedByName, broadcast.lastEditedByRole, broadcast.lastEditedAt)">
+                {{ auditLine('Edited by', broadcast.lastEditedByName, broadcast.lastEditedByRole, broadcast.lastEditedAt) }}
+              </p>
               <label class="review-editor" *ngIf="broadcast.approvalStatus !== 'approved'">
                 <span>Review message</span>
                 <textarea
@@ -129,12 +167,26 @@
                 ></textarea>
               </label>
             </td>
-            <td><span [class]="'status-badge ' + statusClass(broadcast.approvalStatus)">{{ broadcast.approvalStatus }}</span></td>
+            <td>
+              <span [class]="'status-badge ' + statusClass(broadcast.approvalStatus)">{{ broadcast.approvalStatus }}</span>
+              <p class="audit-line" *ngIf="auditLine('Approved by', broadcast.approvedByName, broadcast.approvedByRole, broadcast.approvedAt)">
+                {{ auditLine('Approved by', broadcast.approvedByName, broadcast.approvedByRole, broadcast.approvedAt) }}
+              </p>
+            </td>
             <td>{{ audienceLabel(broadcast) }}</td>
             <td>
               <span class="channel-badge" *ngFor="let channel of broadcast.channels">{{ channel }}</span>
             </td>
-            <td><span [class]="'status-badge ' + statusClass(broadcast.status)">{{ broadcast.status }}</span></td>
+            <td>
+              <span [class]="'status-badge ' + statusClass(broadcast.status)">{{ broadcast.status }}</span>
+              <p class="status-help" *ngIf="statusExplanation(broadcast)">{{ statusExplanation(broadcast) }}</p>
+              <p class="status-help" *ngIf="broadcast.status === 'partially_failed'">
+                Some parents could not receive this broadcast because they have not connected to the school Telegram bot yet.
+              </p>
+              <p class="audit-line" *ngIf="auditLine('Sent by', broadcast.sentByName, broadcast.sentByRole, broadcast.sentAt)">
+                {{ auditLine('Sent by', broadcast.sentByName, broadcast.sentByRole, broadcast.sentAt) }}
+              </p>
+            </td>
             <td>{{ recipientCount(broadcast) }}</td>
             <td>{{ deliverySummary(broadcast) }}</td>
             <td>{{ formatDate(broadcast.createdAt) }}</td>

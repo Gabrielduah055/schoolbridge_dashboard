@@ -42,7 +42,7 @@ export class AuthService {
     return this.http.get<{ user: AuthUser }>(`${this.api}/api/auth/me`).pipe(
       tap((response) => {
         if (response.user) {
-          localStorage.setItem(userKey, JSON.stringify(response.user));
+          sessionStorage.setItem(userKey, JSON.stringify(response.user));
           this.userSubject.next(response.user);
         }
       })
@@ -50,6 +50,8 @@ export class AuthService {
   }
 
   logout(): void {
+    sessionStorage.removeItem(tokenKey);
+    sessionStorage.removeItem(userKey);
     localStorage.removeItem(tokenKey);
     localStorage.removeItem(userKey);
     this.userSubject.next(null);
@@ -57,7 +59,7 @@ export class AuthService {
   }
 
   token(): string {
-    return localStorage.getItem(tokenKey) || '';
+    return sessionStorage.getItem(tokenKey) || '';
   }
 
   currentUser(): AuthUser | null {
@@ -73,15 +75,17 @@ export class AuthService {
   }
 
   private storeSession(token: string, user: AuthUser): void {
-    localStorage.setItem(tokenKey, token);
-    localStorage.setItem(userKey, JSON.stringify(user));
+    sessionStorage.setItem(tokenKey, token);
+    sessionStorage.setItem(userKey, JSON.stringify(user));
+    localStorage.removeItem(tokenKey);
+    localStorage.removeItem(userKey);
     localStorage.removeItem('schoolbridge_admin_api_key');
     this.userSubject.next(user);
   }
 
   private readStoredUser(): AuthUser | null {
     try {
-      const value = localStorage.getItem(userKey);
+      const value = sessionStorage.getItem(userKey);
       return value ? JSON.parse(value) as AuthUser : null;
     } catch {
       return null;

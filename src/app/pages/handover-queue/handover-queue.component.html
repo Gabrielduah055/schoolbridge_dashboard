@@ -54,7 +54,18 @@
               <strong>{{ ticket.reason }}</strong>
               <p class="comm-muted" *ngIf="ticket.aiSuggestedReply">AI suggested reply available</p>
               <p class="comm-muted" *ngIf="ticket.assignedTo">Assigned to {{ ticket.assignedTo }}</p>
-              <p class="comm-muted" *ngIf="ticket.notes?.length">{{ ticket.notes?.length }} note{{ ticket.notes?.length === 1 ? '' : 's' }}</p>
+              <p class="audit-line" *ngIf="actorLine('Assigned by', ticket.assignedByName, ticket.assignedByRole, ticket.assignedAt)">
+                {{ actorLine('Assigned by', ticket.assignedByName, ticket.assignedByRole, ticket.assignedAt) }}
+              </p>
+              <p class="audit-line" *ngIf="actorLine('Resolved by', ticket.resolvedByName, ticket.resolvedByRole, ticket.resolvedAt)">
+                {{ actorLine('Resolved by', ticket.resolvedByName, ticket.resolvedByRole, ticket.resolvedAt) }}
+              </p>
+              <div class="note-stack" *ngIf="ticket.notes?.length">
+                <p class="audit-line" *ngFor="let note of ticket.notes">
+                  {{ note.text }}<br />
+                  <span>{{ actorLine('By', note.createdByName, note.createdByRole, note.createdAt) }}</span>
+                </p>
+              </div>
             </td>
             <td><span [class]="'status-badge priority-' + ticket.priority">{{ ticket.priority }}</span></td>
             <td>{{ participant(ticket) }}</td>

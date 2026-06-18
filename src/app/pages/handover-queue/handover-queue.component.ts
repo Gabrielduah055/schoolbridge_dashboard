@@ -65,6 +65,13 @@ export class HandoverQueueComponent implements OnInit {
     return date.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   }
 
+  actorLine(label: string, name?: string, role?: string, date?: string | null): string {
+    if (!name) return '';
+    const roleText = role ? ` (${role})` : '';
+    const dateText = date ? ` - ${this.formatDate(date)}` : '';
+    return `${label} ${name}${roleText}${dateText}`;
+  }
+
   hasPermission(permission: string): boolean {
     return this.auth.hasPermission(permission);
   }
