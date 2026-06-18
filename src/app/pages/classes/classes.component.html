@@ -13,7 +13,7 @@
     <article class="comm-card metric-card">
       <span>Parent contacts</span>
       <strong>{{ loading ? '-' : totalParents }}</strong>
-      <p>Reachable class audiences</p>
+      <p>Broadcast audience size</p>
     </article>
   </div>
 
@@ -21,27 +21,21 @@
     <div class="comm-card-header">
       <div>
         <h2>Classes</h2>
-        <p>Communication audiences by class</p>
+        <p>Class groups used for broadcasts and parent-to-teacher routing.</p>
       </div>
-      <a class="text-link" routerLink="/broadcasts">Draft broadcast</a>
+      <label class="comm-button-secondary import-button" *ngIf="hasPermission('classes:manage')">
+        {{ importing ? 'Importing...' : 'Import classes' }}
+        <input type="file" accept=".xlsx,.xls,.csv" [disabled]="importing" (change)="importClasses($event)" />
+      </label>
     </div>
 
-    <div class="mini-form" *ngIf="hasPermission('classes:manage')">
-      <input [(ngModel)]="newClass.name" placeholder="Class name e.g. Basic 3" />
-      <input [(ngModel)]="newClass.level" placeholder="Level" />
-      <input [(ngModel)]="newClass.section" placeholder="Section" />
-      <button class="comm-button" type="button" [disabled]="saving || !newClass.name.trim()" (click)="createClass()">
-        {{ saving ? 'Creating...' : 'Create class' }}
-      </button>
-    </div>
     <p class="simple-note" *ngIf="actionMessage">{{ actionMessage }}</p>
-
     <div *ngIf="error" class="simple-error">{{ error }}</div>
 
     <div *ngIf="!loading && classes.length === 0" class="empty-state">
       <div>
         <strong>No classes yet</strong>
-        <p>Classes will appear after students are imported with class names.</p>
+        <p>Import the class/contact sheet from the school to populate communication audiences.</p>
       </div>
     </div>
 
@@ -50,28 +44,21 @@
         <thead>
           <tr>
             <th>Class</th>
-            <th>Level</th>
             <th>Class teacher</th>
             <th>Students</th>
             <th>Parent contacts</th>
-            <th>Subject teachers</th>
             <th>Broadcasts</th>
-            <th>Communication</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let classItem of classes">
-            <td>
-              <strong>{{ classItem.displayName || classItem.className || classItem.name }}</strong>
-              <p class="simple-note" *ngIf="warningText(classItem)">{{ warningText(classItem) }}</p>
-            </td>
-            <td>{{ classItem.level || '-' }} <span *ngIf="classItem.section">/ {{ classItem.section }}</span></td>
-            <td>{{ teacherName(classItem) }}</td>
+            <td><strong>{{ classItem.displayName || classItem.className || classItem.name }}</strong></td>
+            <td>{{ classItem.teacher || 'Not assigned' }}</td>
             <td>{{ classItem.studentCount }}</td>
             <td>{{ classItem.parentContactCount }}</td>
-            <td>{{ classItem.subjectTeachersCount || 0 }}</td>
             <td>{{ classItem.recentBroadcastCount }}</td>
-            <td><span class="channel-badge">broadcast audience</span></td>
+            <td><a class="text-link" routerLink="/broadcasts">Broadcast</a></td>
           </tr>
         </tbody>
       </table>

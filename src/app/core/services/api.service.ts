@@ -317,67 +317,9 @@ export interface ClassDirectoryRow {
   displayName?: string;
   active?: boolean;
   teacher: string;
-  classTeacher?: TeacherAssignment | null;
   studentCount: number;
   parentContactCount: number;
-  subjectTeachersCount?: number;
   recentBroadcastCount: number;
-  warnings?: {
-    noActiveAcademicYear?: boolean;
-    noClassTeacher?: boolean;
-    noActiveStudents?: boolean;
-  };
-}
-
-export interface AcademicYear {
-  _id?: string;
-  id?: string;
-  schoolId: string;
-  name: string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  status: 'upcoming' | 'active' | 'closed';
-}
-
-export interface Subject {
-  _id?: string;
-  id?: string;
-  schoolId: string;
-  name: string;
-  code: string;
-  active: boolean;
-}
-
-export interface TeacherAssignment {
-  _id?: string;
-  id?: string;
-  schoolId: string;
-  academicYearId: string | AcademicYear;
-  teacherId: string | { _id?: string; fullName?: string; name?: string; phone?: string; active?: boolean };
-  classId: string | ClassDirectoryRow;
-  assignmentType: 'class_teacher' | 'subject_teacher';
-  subjectId?: string | Subject | null;
-  subjectName?: string;
-  startDate: string;
-  endDate?: string | null;
-  isActive: boolean;
-  createdByName?: string;
-  endedByName?: string;
-  endedAt?: string | null;
-  endReason?: string;
-}
-
-export interface StudentEnrollment {
-  _id?: string;
-  id?: string;
-  schoolId: string;
-  academicYearId: string | AcademicYear;
-  studentId: string | ApiStudent;
-  classId: string | ClassDirectoryRow;
-  status: 'active' | 'promoted' | 'repeated' | 'transferred' | 'withdrawn' | 'graduated';
-  startDate: string;
-  endDate?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -410,6 +352,22 @@ export class ApiService {
 
   importStudents(formData: FormData) {
     return this.http.post(`${this.api}/api/students/import`, formData, this.authOptions());
+  }
+
+  importTeachers(formData: FormData) {
+    return this.http.post<{ imported: number; updated: number; skipped: number; total: number; errors?: string[] }>(
+      `${this.api}/api/teachers/import`,
+      formData,
+      this.authOptions()
+    );
+  }
+
+  importClasses(formData: FormData) {
+    return this.http.post<{ imported: number; updated: number; skipped: number; total: number; errors?: string[] }>(
+      `${this.api}/api/classes/import`,
+      formData,
+      this.authOptions()
+    );
   }
 
   // Chat
@@ -497,86 +455,6 @@ export class ApiService {
     return this.http
       .get<unknown>(`${this.api}/api/classes`, this.authOptions())
       .pipe(map((response) => this.extractArray<ClassDirectoryRow>(response, ['classes', 'data', 'items', 'results'])));
-  }
-
-  createClass(payload: { name: string; level?: string; section?: string; displayName?: string; active?: boolean }): Observable<ClassDirectoryRow> {
-    return this.http.post<ClassDirectoryRow>(`${this.api}/api/classes`, payload, this.authOptions());
-  }
-
-  getClassSummary(id: string): Observable<any> {
-    return this.http.get<any>(`${this.api}/api/classes/${id}/summary`, this.authOptions());
-  }
-
-  getAcademicYears(): Observable<AcademicYear[]> {
-    return this.http
-      .get<unknown>(`${this.api}/api/academic-years`, this.authOptions())
-      .pipe(map((response) => this.extractArray<AcademicYear>(response, ['academicYears', 'data', 'items', 'results'])));
-  }
-
-  getActiveAcademicYear(): Observable<AcademicYear | null> {
-    return this.http.get<AcademicYear | null>(`${this.api}/api/academic-years/active`, this.authOptions());
-  }
-
-  createAcademicYear(payload: { name: string; startDate: string; endDate: string; isActive?: boolean }): Observable<AcademicYear> {
-    return this.http.post<AcademicYear>(`${this.api}/api/academic-years`, payload, this.authOptions());
-  }
-
-  setActiveAcademicYear(id: string): Observable<AcademicYear> {
-    return this.http.post<AcademicYear>(`${this.api}/api/academic-years/${id}/set-active`, {}, this.authOptions());
-  }
-
-  closeAcademicYear(id: string): Observable<AcademicYear> {
-    return this.http.post<AcademicYear>(`${this.api}/api/academic-years/${id}/close`, {}, this.authOptions());
-  }
-
-  getSubjects(): Observable<Subject[]> {
-    return this.http
-      .get<unknown>(`${this.api}/api/subjects`, this.authOptions())
-      .pipe(map((response) => this.extractArray<Subject>(response, ['subjects', 'data', 'items', 'results'])));
-  }
-
-  createSubject(payload: { name: string; code?: string; active?: boolean }): Observable<Subject> {
-    return this.http.post<Subject>(`${this.api}/api/subjects`, payload, this.authOptions());
-  }
-
-  getTeacherAssignments(filters: { teacherId?: string; classId?: string; academicYearId?: string; isActive?: string } = {}): Observable<TeacherAssignment[]> {
-    return this.http
-      .get<unknown>(`${this.api}/api/teacher-assignments`, { ...this.authOptions(), params: this.cleanParams(filters) })
-      .pipe(map((response) => this.extractArray<TeacherAssignment>(response, ['teacherAssignments', 'assignments', 'data', 'items', 'results'])));
-  }
-
-  assignClassTeacher(payload: { academicYearId: string; teacherId: string; classId: string; startDate?: string }): Observable<TeacherAssignment> {
-    return this.http.post<TeacherAssignment>(`${this.api}/api/teacher-assignments/class-teacher`, payload, this.authOptions());
-  }
-
-  replaceClassTeacher(payload: { academicYearId: string; classId: string; newTeacherId: string; reason?: string; startDate?: string }): Observable<TeacherAssignment> {
-    return this.http.post<TeacherAssignment>(`${this.api}/api/teacher-assignments/replace-class-teacher`, payload, this.authOptions());
-  }
-
-  assignSubjectTeacher(payload: { academicYearId: string; teacherId: string; classId: string; subjectId?: string; subjectName?: string; startDate?: string }): Observable<TeacherAssignment> {
-    return this.http.post<TeacherAssignment>(`${this.api}/api/teacher-assignments/subject-teacher`, payload, this.authOptions());
-  }
-
-  endTeacherAssignment(id: string, reason = 'Ended from dashboard'): Observable<TeacherAssignment> {
-    return this.http.post<TeacherAssignment>(`${this.api}/api/teacher-assignments/${id}/end`, { reason }, this.authOptions());
-  }
-
-  getTeacherCommunicationScope(teacherId: string): Observable<any> {
-    return this.http.get<any>(`${this.api}/api/teachers/${teacherId}/communication-scope`, this.authOptions());
-  }
-
-  getStudentEnrollments(studentId: string): Observable<StudentEnrollment[]> {
-    return this.http
-      .get<unknown>(`${this.api}/api/students/${studentId}/enrollments`, this.authOptions())
-      .pipe(map((response) => this.extractArray<StudentEnrollment>(response, ['enrollments', 'data', 'items', 'results'])));
-  }
-
-  getStudentCurrentEnrollment(studentId: string): Observable<StudentEnrollment | null> {
-    return this.http.get<StudentEnrollment | null>(`${this.api}/api/students/${studentId}/current-enrollment`, this.authOptions());
-  }
-
-  enrollStudent(payload: { academicYearId: string; studentId: string; classId: string; startDate?: string }): Observable<StudentEnrollment> {
-    return this.http.post<StudentEnrollment>(`${this.api}/api/student-enrollments`, payload, this.authOptions());
   }
 
   getHandoverTickets(status?: string): Observable<HandoverTicket[]> {
