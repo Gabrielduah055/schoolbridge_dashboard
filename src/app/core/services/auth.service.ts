@@ -8,7 +8,7 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: 'super_admin' | 'headmaster' | 'school_admin' | 'teacher';
+  role: 'headmaster';
   permissions: string[];
   schoolId: string;
 }
@@ -71,7 +71,10 @@ export class AuthService {
   }
 
   hasPermission(permission: string): boolean {
-    return this.currentUser()?.permissions.includes(permission) ?? false;
+    const user = this.currentUser();
+    if (!user) return false;
+    if (user.role === 'headmaster') return true;
+    return user.permissions.includes(permission);
   }
 
   private storeSession(token: string, user: AuthUser): void {
