@@ -109,24 +109,70 @@ svg {
   box-shadow: inset 3px 0 0 var(--sb-accent);
 }
 
+.sidebar-account {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--sb-border);
+}
+
+.account-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .admin-mini {
   display: grid;
-  place-items: center;
+  flex: 0 0 auto;
   width: 38px;
   height: 38px;
-  margin: auto 0 0 5px;
+  place-items: center;
   color: var(--sb-accent-strong);
-  cursor: pointer;
   border: 1px solid var(--sb-border);
   border-radius: 999px;
   background: var(--sb-surface);
-  box-shadow: none;
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  font-size: 12px;
+  font-weight: 800;
 }
 
-.admin-mini:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--sb-shadow);
+.account-text {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.account-text strong,
+.account-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-text strong {
+  color: var(--sb-text);
+  font-size: 13px;
+}
+
+.account-text small {
+  color: var(--sb-muted);
+  font-size: 12px;
+}
+
+.logout-button {
+  min-height: 34px;
+  color: var(--sb-accent-strong);
+  cursor: pointer;
+  border: 1px solid var(--sb-accent-soft);
+  border-radius: 8px;
+  background: var(--sb-accent-faint);
+  font-weight: 700;
+}
+
+.logout-button:hover {
+  border-color: var(--sb-accent);
 }
 
 @media (max-width: 980px) {
@@ -162,9 +208,26 @@ svg {
   }
 
   .brand-mark,
-  .admin-mini {
+  .sidebar-account {
     flex: 0 0 auto;
     margin: 0;
+  }
+
+  .sidebar-account {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0 0 10px;
+    border-top: 0;
+    border-left: 1px solid var(--sb-border);
+  }
+
+  .account-text {
+    display: none;
+  }
+
+  .logout-button {
+    width: 76px;
   }
 
   .nav-list {

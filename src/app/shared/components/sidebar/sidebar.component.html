@@ -18,7 +18,14 @@
     </a>
   </nav>
 
-  <button class="admin-mini" type="button" aria-label="Admin profile" title="Mr. Asante">
-    <span>MA</span>
-  </button>
+  <div class="sidebar-account" *ngIf="user$ | async as user">
+    <div class="account-summary">
+      <span class="admin-mini">{{ initials(user) }}</span>
+      <span class="account-text">
+        <strong>{{ user.name }}</strong>
+        <small>{{ user.role }}</small>
+      </span>
+    </div>
+    <button class="logout-button" type="button" (click)="logout()">Logout</button>
+  </div>
 </aside>

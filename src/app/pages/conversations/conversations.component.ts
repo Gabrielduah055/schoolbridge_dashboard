@@ -183,11 +183,25 @@ export class ConversationsComponent implements OnInit, OnDestroy {
     return message.body || message.message || 'No message body';
   }
 
+  messageActorLabel(message: Message): string {
+    if (message.direction === 'outgoing' && !message.aiGenerated && message.senderName) {
+      const role = message.senderRole?.replace(/_/g, ' ') || 'staff';
+      return `${this.titleCase(role)} replied`;
+    }
+
+    if (message.aiGenerated) return 'SchoolBridge AI';
+    return message.senderName || message.senderRole || message.direction;
+  }
+
   formatDate(value?: string | null): string {
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  private titleCase(value: string): string {
+    return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
   private loadConversations(): void {

@@ -12,7 +12,8 @@ export interface ApiKnowledgeItem {
 }
 
 export type CommunicationChannel = 'telegram' | 'whatsapp' | 'dashboard';
-export type ParticipantRole = 'parent' | 'teacher' | 'admin' | 'visitor' | 'unregistered';
+export type AdminRole = 'super_admin' | 'headmaster' | 'school_admin' | 'teacher';
+export type ParticipantRole = 'parent' | 'teacher' | 'admin' | AdminRole | 'visitor' | 'unregistered';
 
 export interface ChannelAccount {
   _id?: string;
@@ -68,6 +69,7 @@ export interface Message {
   channel: CommunicationChannel;
   direction: 'incoming' | 'outgoing';
   senderRole: ParticipantRole | 'assistant' | 'system';
+  senderUserId?: string | null;
   senderName: string;
   body: string;
   messageType: 'text' | 'image' | 'file' | 'audio' | 'system';
@@ -99,12 +101,15 @@ export interface HandoverTicket {
   assignedTo: string;
   assignedBy?: string | null;
   assignedByName?: string;
+  assignedByRole?: AdminRole | '';
+  assignedAt?: string | null;
   internalNotes: string;
-  notes?: Array<{ text: string; createdBy: string; createdAt: string }>;
+  notes?: Array<{ text: string; createdBy?: string | null; createdByName?: string; createdByRole?: AdminRole | ''; createdAt: string }>;
   aiSuggestedReply: string;
   resolvedAt: string | null;
   resolvedBy?: string | null;
   resolvedByName?: string;
+  resolvedByRole?: AdminRole | '';
   createdAt?: string;
   updatedAt?: string;
 }
@@ -114,7 +119,12 @@ export interface Broadcast {
   id?: string;
   schoolId: string;
   createdBy?: string | null;
-  createdByRole: 'teacher' | 'admin';
+  createdByName?: string;
+  createdByRole: AdminRole | 'admin';
+  lastEditedBy?: string | null;
+  lastEditedByName?: string;
+  lastEditedByRole?: AdminRole | 'admin' | '';
+  lastEditedAt?: string | null;
   audienceType: 'whole_school' | 'class' | 'individual' | 'individual_parent' | 'teachers' | 'parents';
   classId?: string | null;
   recipientStudentId?: string | null;
@@ -132,13 +142,15 @@ export interface Broadcast {
     size: number;
   }>;
   approvalStatus: 'draft' | 'pending_approval' | 'approved' | 'rejected';
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'partial' | 'partially_failed' | 'failed' | 'cancelled';
+  status: 'draft' | 'pending_approval' | 'approved' | 'sending' | 'sent' | 'partially_failed' | 'failed' | 'cancelled';
   channels: Array<'telegram' | 'whatsapp'>;
   approvedBy?: string | null;
   approvedByName?: string;
+  approvedByRole?: AdminRole | 'admin' | '';
   approvedAt?: string | null;
   sentBy?: string | null;
   sentByName?: string;
+  sentByRole?: AdminRole | 'admin' | '';
   sentAt: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -197,7 +209,6 @@ export interface WebhookEvent {
 }
 
 export interface BroadcastDraftPayload {
-  createdByRole: 'teacher' | 'admin';
   audienceType: Broadcast['audienceType'];
   originalText: string;
   title?: string;
@@ -210,6 +221,30 @@ export interface BroadcastDraftPayload {
   channels?: Array<'telegram' | 'whatsapp'>;
   schoolId?: string;
   attachment?: File | null;
+}
+
+export interface BroadcastRecipientPreviewItem {
+  name: string;
+  role: 'parent' | 'teacher';
+  phone: string;
+  studentName: string;
+  className: string;
+  telegramLinked: boolean;
+  telegramChatId: string | null;
+  canReceiveNow: boolean;
+  reasonIfNotReachable: string | null;
+}
+
+export interface BroadcastRecipientPreview {
+  audienceType: Broadcast['audienceType'];
+  totalContacts: number;
+  telegramReachable: number;
+  telegramMissing: number;
+  whatsappReachable: number;
+  whatsappMissing: number;
+  reachableNow: number;
+  unreachableNow: number;
+  recipients: BroadcastRecipientPreviewItem[];
 }
 
 export interface BroadcastMetrics {
@@ -347,12 +382,8 @@ export class ApiService {
       .pipe(map((response) => this.extractArray<Message>(response, ['messages', 'data', 'items', 'results'])));
   }
 
-  replyToConversation(id: string, body: string, senderName = 'Admin'): Observable<Message> {
-    return this.http.post<Message>(`${this.api}/api/conversations/${id}/reply`, {
-      body,
-      senderName,
-      senderRole: 'admin'
-    }, this.authOptions());
+  replyToConversation(id: string, body: string): Observable<Message> {
+    return this.http.post<Message>(`${this.api}/api/conversations/${id}/reply`, { body }, this.authOptions());
   }
 
   assignConversation(id: string, assignedTo: string): Observable<Conversation> {
@@ -417,8 +448,8 @@ export class ApiService {
     return this.http.post<HandoverTicket>(`${this.api}/api/handover-tickets/${id}/assign`, { assignedTo }, this.authOptions());
   }
 
-  addHandoverNote(id: string, note: string, createdBy = 'Admin'): Observable<HandoverTicket> {
-    return this.http.post<HandoverTicket>(`${this.api}/api/handover-tickets/${id}/note`, { note, createdBy }, this.authOptions());
+  addHandoverNote(id: string, note: string): Observable<HandoverTicket> {
+    return this.http.post<HandoverTicket>(`${this.api}/api/handover-tickets/${id}/note`, { note }, this.authOptions());
   }
 
   getBroadcasts(): Observable<Broadcast[]> {
@@ -434,7 +465,6 @@ export class ApiService {
   createBroadcastDraft(payload: BroadcastDraftPayload): Observable<Broadcast> {
     if (payload.attachment) {
       const formData = new FormData();
-      formData.append('createdByRole', payload.createdByRole);
       formData.append('audienceType', payload.audienceType);
       formData.append('originalText', payload.originalText);
       if (payload.title) formData.append('title', payload.title);
@@ -469,6 +499,17 @@ export class ApiService {
     return this.http
       .get<unknown>(`${this.api}/api/broadcasts/${id}/recipients`, this.authOptions())
       .pipe(map((response) => this.extractArray<MessageRecipient>(response, ['recipients', 'data', 'items', 'results'])));
+  }
+
+  previewBroadcastRecipients(payload: {
+    audienceType: Broadcast['audienceType'];
+    classId?: string;
+    targetClass?: string;
+    recipientStudentId?: string;
+    recipientPhone?: string;
+    channels?: Array<'telegram' | 'whatsapp'>;
+  }): Observable<BroadcastRecipientPreview> {
+    return this.http.post<BroadcastRecipientPreview>(`${this.api}/api/broadcasts/preview-recipients`, payload, this.authOptions());
   }
 
   getDeliveryLogs(): Observable<DeliveryLog[]> {

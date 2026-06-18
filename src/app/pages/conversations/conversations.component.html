@@ -133,8 +133,8 @@
       <div class="message-thread" *ngIf="!messagesLoading && messages.length > 0">
         <article *ngFor="let message of messages" [class]="'message-bubble ' + message.direction">
           <div class="message-bubble-header">
+            <span>{{ messageActorLabel(message) }}</span>
             <span>{{ message.direction }}</span>
-            <span>{{ message.senderRole }}</span>
             <span *ngIf="message.aiGenerated" class="ai-badge">AI-generated</span>
             <span [class]="'status-badge ' + statusClass(message.status)">{{ message.status }}</span>
           </div>

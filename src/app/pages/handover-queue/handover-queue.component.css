@@ -16,3 +16,19 @@
 .queue-actions a {
   text-decoration: none;
 }
+
+.audit-line {
+  margin: 6px 0 0;
+  color: var(--sb-muted);
+  font-size: 12px;
+}
+
+.audit-line span {
+  color: var(--sb-muted);
+}
+
+.note-stack {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
