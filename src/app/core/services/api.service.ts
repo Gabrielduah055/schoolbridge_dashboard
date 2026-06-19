@@ -302,6 +302,8 @@ export interface TeacherDirectoryRow {
   phone: string;
   email: string;
   assignedClasses: string[];
+  classTeacherClasses?: string[];
+  subjectAssignments?: Array<{ className: string; subject: string }>;
   subject: string;
   channelIdentityStatus: string;
   lastConversationAt: string | null;

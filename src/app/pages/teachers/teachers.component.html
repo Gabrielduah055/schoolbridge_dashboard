@@ -11,9 +11,9 @@
       <p>Can receive bot messages</p>
     </article>
     <article class="comm-card metric-card">
-      <span>Class coverage</span>
+      <span>Class teachers</span>
       <strong>{{ loading ? '-' : classReferenceCount }}</strong>
-      <p>Teachers with class assignments</p>
+      <p>Teachers with class-teacher roles</p>
     </article>
     <article class="comm-card metric-card">
       <span>Teaching areas</span>
@@ -26,7 +26,7 @@
     <div class="comm-card-header">
       <div>
         <h2>Teachers</h2>
-        <p>Teacher contacts, teaching areas, and class routing context.</p>
+        <p>Teacher contacts, subject teaching, and class-teacher routing context.</p>
       </div>
       <label class="comm-button-secondary import-button" *ngIf="hasPermission('teachers:manage')">
         {{ importing ? 'Importing...' : 'Import teachers' }}
@@ -41,7 +41,7 @@
       <div>
         <strong>No teacher records yet</strong>
         <p>Import the teacher contact sheet from the school to populate this directory.</p>
-        <p class="simple-note">Supported columns: Teacher Name, Phone, Email, Subject, Assigned Classes.</p>
+        <p class="simple-note">Supported columns: Teacher Name, Phone, Email, Teaches, Assigned Classes.</p>
       </div>
     </div>
 
@@ -51,7 +51,7 @@
           <tr>
             <th>Teacher</th>
             <th>Teaches</th>
-            <th>Assigned classes</th>
+            <th>Class teacher of</th>
             <th>Phone</th>
             <th>Email</th>
             <th>Telegram</th>
