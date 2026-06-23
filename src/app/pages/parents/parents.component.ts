@@ -10,6 +10,7 @@ interface ParentRow {
   students: string[];
   classes: string[];
   channelIdentityStatus: string;
+  whatsappIdentityStatus?: string;
   lastConversationAt: string | null;
 }
 
@@ -92,6 +93,7 @@ export class ParentsComponent implements OnInit {
       students: parent.linkedStudents.map((student) => student.name).filter(Boolean),
       classes: parent.classes,
       channelIdentityStatus: parent.channelIdentityStatus,
+      whatsappIdentityStatus: parent.whatsappIdentityStatus,
       lastConversationAt: parent.lastConversationAt
     };
   }
@@ -108,6 +110,7 @@ export class ParentsComponent implements OnInit {
         students: [],
         classes: [],
         channelIdentityStatus: 'unknown',
+        whatsappIdentityStatus: 'unknown',
         lastConversationAt: null
       };
       const studentName = this.text(student, ['name', 'fullName', 'studentName']) || 'Unknown student';

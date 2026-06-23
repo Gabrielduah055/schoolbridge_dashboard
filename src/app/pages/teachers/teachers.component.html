@@ -55,6 +55,7 @@
             <th>Phone</th>
             <th>Email</th>
             <th>Telegram</th>
+            <th>WhatsApp</th>
             <th>Last conversation</th>
           </tr>
         </thead>
@@ -66,6 +67,7 @@
             <td>{{ teacher.phone || '-' }}</td>
             <td>{{ teacher.email || '-' }}</td>
             <td><span class="channel-badge">{{ teacher.channelIdentityStatus }}</span></td>
+            <td><span class="channel-badge">{{ teacher.whatsappIdentityStatus || 'not_connected' }}</span></td>
             <td>{{ formatDate(teacher.lastConversationAt) }}</td>
           </tr>
         </tbody>

@@ -45,6 +45,7 @@
             <th>Students</th>
             <th>Classes</th>
             <th>Telegram</th>
+            <th>WhatsApp</th>
             <th>Last conversation</th>
           </tr>
         </thead>
@@ -56,6 +57,7 @@
             <td>{{ parent.students.join(', ') }}</td>
             <td>{{ parent.classes.join(', ') }}</td>
             <td><span class="channel-badge">{{ parent.channelIdentityStatus }}</span></td>
+            <td><span class="channel-badge">{{ parent.whatsappIdentityStatus || 'not_connected' }}</span></td>
             <td>{{ formatDate(parent.lastConversationAt) }}</td>
           </tr>
         </tbody>

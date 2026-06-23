@@ -27,6 +27,10 @@ export class ChannelsComponent implements OnInit {
     return this.accounts.find((account) => account.channel === 'telegram');
   }
 
+  get whatsapp(): ChannelAccount | undefined {
+    return this.accounts.find((account) => account.channel === 'whatsapp');
+  }
+
   get failedOrPendingLogs(): DeliveryLog[] {
     return this.deliveryLogs.filter((log) => ['failed', 'queued', 'unknown'].includes(log.status));
   }

@@ -48,21 +48,53 @@
       </ng-template>
     </section>
 
-    <section class="comm-card channel-status-card muted">
+    <section class="comm-card channel-status-card" *ngIf="whatsappStatus; else noWhatsAppStatus">
       <div class="comm-card-header">
         <div>
           <h2>WhatsApp Status</h2>
-          <p>Placeholder for the future WhatsApp connection</p>
+          <p>WasenderAPI communication channel</p>
         </div>
-        <span class="status-badge status-disconnected">future</span>
+        <span [class]="'status-badge ' + statusClass(whatsappStatus.status)">
+          {{ whatsappStatus.status }}
+        </span>
       </div>
-      <div class="empty-state">
+      <div class="channel-status-body">
         <div>
-          <strong>Channel not connected</strong>
-          <p>WhatsApp is intentionally shown as a future communication channel.</p>
+          <span>Provider</span>
+          <strong>{{ whatsappStatus.provider }}</strong>
+        </div>
+        <div>
+          <span>Session</span>
+          <strong>{{ whatsappStatus.identifier }}</strong>
+        </div>
+        <div>
+          <span>Last inbound</span>
+          <strong>{{ formatDate(whatsappStatus.lastInboundAt) }}</strong>
+        </div>
+        <div>
+          <span>Last outbound</span>
+          <strong>{{ formatDate(whatsappStatus.lastOutboundAt) }}</strong>
         </div>
       </div>
     </section>
+
+    <ng-template #noWhatsAppStatus>
+      <section class="comm-card channel-status-card muted">
+        <div class="comm-card-header">
+          <div>
+            <h2>WhatsApp Status</h2>
+            <p>WasenderAPI connection</p>
+          </div>
+          <span class="status-badge status-disconnected">not configured</span>
+        </div>
+        <div class="empty-state">
+          <div>
+            <strong>Channel not connected</strong>
+            <p>WhatsApp status will appear when WasenderAPI is configured.</p>
+          </div>
+        </div>
+      </section>
+    </ng-template>
   </div>
 
   <div class="comm-grid cols-2">

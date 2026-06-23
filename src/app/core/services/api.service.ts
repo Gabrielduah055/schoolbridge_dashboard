@@ -292,6 +292,7 @@ export interface ParentDirectoryRow {
   classes: string[];
   preferredChannel: string;
   channelIdentityStatus: string;
+  whatsappIdentityStatus?: string;
   lastConversationAt: string | null;
 }
 
@@ -306,6 +307,7 @@ export interface TeacherDirectoryRow {
   subjectAssignments?: Array<{ className: string; subject: string }>;
   subject: string;
   channelIdentityStatus: string;
+  whatsappIdentityStatus?: string;
   lastConversationAt: string | null;
 }
 

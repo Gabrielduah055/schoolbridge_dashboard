@@ -49,21 +49,52 @@
       </section>
     </ng-template>
 
-    <section class="comm-card pad channel-card future">
+    <section class="comm-card pad channel-card" *ngIf="whatsapp; else noWhatsApp">
       <div class="channel-card-top">
         <div>
           <h2>WhatsApp</h2>
-          <p>Future connection placeholder</p>
+          <p>{{ whatsapp.displayName || whatsapp.identifier }}</p>
         </div>
-        <span class="status-badge status-disconnected">future</span>
+        <span [class]="'status-badge ' + statusClass(whatsapp.status)">{{ whatsapp.status }}</span>
       </div>
-      <div class="empty-state">
+      <dl class="channel-details">
         <div>
-          <strong>Channel not connected</strong>
-          <p>WhatsApp connection is intentionally not part of this MVP build.</p>
+          <dt>Provider</dt>
+          <dd>{{ whatsapp.provider }}</dd>
         </div>
-      </div>
+        <div>
+          <dt>Session</dt>
+          <dd>{{ whatsapp.identifier }}</dd>
+        </div>
+        <div>
+          <dt>Last inbound</dt>
+          <dd>{{ formatDate(whatsapp.lastInboundAt) }}</dd>
+        </div>
+        <div>
+          <dt>Last outbound</dt>
+          <dd>{{ formatDate(whatsapp.lastOutboundAt) }}</dd>
+        </div>
+      </dl>
+      <p class="channel-error" *ngIf="whatsapp.lastError">{{ whatsapp.lastError }}</p>
     </section>
+
+    <ng-template #noWhatsApp>
+      <section class="comm-card pad channel-card future">
+        <div class="channel-card-top">
+          <div>
+            <h2>WhatsApp</h2>
+            <p>WasenderAPI connection</p>
+          </div>
+          <span class="status-badge status-disconnected">not configured</span>
+        </div>
+        <div class="empty-state">
+          <div>
+            <strong>Channel not connected</strong>
+            <p>Add WasenderAPI env vars and receive a webhook/send event to populate this channel.</p>
+          </div>
+        </div>
+      </section>
+    </ng-template>
   </div>
 
   <section class="comm-card">
