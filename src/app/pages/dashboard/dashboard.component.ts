@@ -48,6 +48,10 @@ export class DashboardComponent implements OnInit {
     return this.channelAccounts.find((account) => account.channel === 'telegram');
   }
 
+  get whatsappStatus(): ChannelAccount | undefined {
+    return this.channelAccounts.find((account) => account.channel === 'whatsapp');
+  }
+
   get recentConversations(): Conversation[] {
     return this.conversations.slice(0, 6);
   }

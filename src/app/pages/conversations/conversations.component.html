@@ -157,7 +157,7 @@
           <button class="comm-button-secondary" type="button" *ngIf="hasPermission('conversations:assign')" [disabled]="runningAction || !assigningTo.trim()" (click)="assignSelected()">Assign</button>
         </label>
         <label>
-          <span>Reply through Telegram</span>
+          <span>Reply through {{ conversation.channel }}</span>
           <textarea [(ngModel)]="replyText" placeholder="Type a manual admin reply..."></textarea>
           <button class="comm-button" type="button" *ngIf="hasPermission('conversations:reply')" [disabled]="sendingReply || !replyText.trim()" (click)="sendReply()">
             {{ sendingReply ? 'Sending...' : 'Send reply' }}
