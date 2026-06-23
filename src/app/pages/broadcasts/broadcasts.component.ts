@@ -14,6 +14,7 @@ interface BroadcastDraftForm {
   recipientStudentId: string;
   recipientPhone: string;
   telegram: boolean;
+  whatsapp: boolean;
 }
 
 interface StudentOption {
@@ -56,7 +57,8 @@ export class BroadcastsComponent implements OnInit {
     targetClass: '',
     recipientStudentId: '',
     recipientPhone: '',
-    telegram: true
+    telegram: true,
+    whatsapp: false
   };
 
   constructor(
@@ -169,11 +171,21 @@ export class BroadcastsComponent implements OnInit {
       return;
     }
 
-    const channels: Array<'telegram'> = [];
-    if (this.draft.telegram) channels.push('telegram');
+    const channels = this.selectedChannels();
+    if (channels.length === 0) {
+      this.actionMessage = 'Select at least one channel for this broadcast.';
+      return;
+    }
+
+    if (this.selectedAttachment && this.draft.whatsapp && !this.draft.telegram) {
+      this.actionMessage = 'Attachments are only supported on Telegram broadcasts right now. Select Telegram or remove the attachment.';
+      return;
+    }
 
     this.saving = true;
-    this.actionMessage = 'Creating draft...';
+    this.actionMessage = this.selectedAttachment && this.draft.whatsapp
+      ? 'Creating draft. Attachment delivery will use Telegram; WhatsApp recipients will receive the message text.'
+      : 'Creating draft...';
     this.api.createBroadcastDraft({
       audienceType: this.draft.audienceType,
       title: this.draft.title.trim(),
@@ -183,7 +195,7 @@ export class BroadcastsComponent implements OnInit {
       recipientStudentId: this.draft.recipientStudentId,
       recipientStudentName: this.selectedStudent?.name,
       recipientPhone: this.draft.recipientPhone.trim(),
-      channels: channels.length ? channels : ['telegram'],
+      channels,
       attachment: this.selectedAttachment
     }).subscribe({
       next: () => {
@@ -197,7 +209,8 @@ export class BroadcastsComponent implements OnInit {
           targetClass: '',
           recipientStudentId: '',
           recipientPhone: '',
-          telegram: true
+          telegram: true,
+          whatsapp: false
         };
         this.selectedAttachment = null;
         this.preview = null;
@@ -223,22 +236,25 @@ export class BroadcastsComponent implements OnInit {
       return;
     }
 
+    if (this.selectedChannels().length === 0) {
+      this.previewMessage = 'Select at least one channel before previewing recipients.';
+      return;
+    }
+
     this.previewLoading = true;
-    this.previewMessage = 'Checking Telegram reachability...';
+    this.previewMessage = 'Checking channel reachability...';
     this.api.previewBroadcastRecipients({
       audienceType: this.draft.audienceType,
       classId: this.draft.classId,
       targetClass: this.draft.targetClass.trim(),
       recipientStudentId: this.draft.recipientStudentId,
       recipientPhone: this.draft.recipientPhone.trim(),
-      channels: this.draft.telegram ? ['telegram'] : []
+      channels: this.selectedChannels()
     }).subscribe({
       next: (preview) => {
         this.preview = preview;
         this.previewLoading = false;
-        this.previewMessage = preview.reachableNow === 0
-          ? 'No selected contacts can receive this broadcast on Telegram right now.'
-          : `${preview.reachableNow} of ${preview.totalContacts} contacts can receive this broadcast now.`;
+        this.previewMessage = this.previewSummary(preview);
       },
       error: (err) => {
         console.error('Failed to preview broadcast recipients', err);
@@ -288,6 +304,20 @@ export class BroadcastsComponent implements OnInit {
     return '';
   }
 
+  selectedChannels(): Array<'telegram' | 'whatsapp'> {
+    const channels: Array<'telegram' | 'whatsapp'> = [];
+    if (this.draft.telegram) channels.push('telegram');
+    if (this.draft.whatsapp) channels.push('whatsapp');
+    return channels;
+  }
+
+  previewSummary(preview: BroadcastRecipientPreview): string {
+    if (preview.reachableNow === 0) {
+      return 'No selected contacts can receive this broadcast on the selected channels right now.';
+    }
+    return `${preview.reachableNow} of ${preview.totalContacts} contacts can receive this broadcast now.`;
+  }
+
   auditLine(label: string, name?: string, role?: string, date?: string | null): string {
     if (!name) return '';
     const roleText = role ? ` (${role})` : '';
@@ -333,10 +363,11 @@ export class BroadcastsComponent implements OnInit {
     this.api.sendBroadcast(id).subscribe({
       next: (updated) => {
         this.broadcasts = this.broadcasts.map((item) => this.broadcastId(item) === id ? updated.broadcast : item);
-        this.recipientCounts.set(id, updated.deliverySummary.totalRecipients);
+        const totalDeliveries = updated.deliverySummary.totalDeliveries ?? updated.deliverySummary.totalRecipients;
+        this.recipientCounts.set(id, totalDeliveries);
         this.deliverySummaries.set(
           id,
-          `Sent: ${updated.deliverySummary.sentCount} / Failed: ${updated.deliverySummary.failedCount + updated.deliverySummary.pendingCount} / Total: ${updated.deliverySummary.totalRecipients}`
+          `Sent: ${updated.deliverySummary.sentCount} / Failed: ${updated.deliverySummary.failedCount + updated.deliverySummary.pendingCount} / Total: ${totalDeliveries}`
         );
         this.actionId = '';
         this.actionMessage = 'Broadcast send completed.';

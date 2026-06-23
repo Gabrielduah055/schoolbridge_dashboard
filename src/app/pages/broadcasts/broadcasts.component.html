@@ -82,7 +82,7 @@
       </div>
       <div class="channel-checks">
         <label><input type="checkbox" [(ngModel)]="draft.telegram" /> Telegram</label>
-        <span class="channel-placeholder">WhatsApp connection is not enabled yet</span>
+        <label><input type="checkbox" [(ngModel)]="draft.whatsapp" /> WhatsApp</label>
       </div>
     </div>
 
@@ -103,18 +103,22 @@
         <strong>{{ preview.telegramReachable }}</strong>
       </div>
       <div>
-        <span>Not linked</span>
-        <strong>{{ preview.telegramMissing }}</strong>
+        <span>WhatsApp linked</span>
+        <strong>{{ preview.whatsappReachable }}</strong>
+      </div>
+      <div>
+        <span>Unreachable</span>
+        <strong>{{ preview.unreachableNow }}</strong>
       </div>
       <div>
         <span>Will receive now</span>
         <strong>{{ preview.reachableNow }}</strong>
       </div>
       <p class="preview-warning" *ngIf="preview.reachableNow < preview.totalContacts && preview.reachableNow > 0">
-        Only {{ preview.reachableNow }} out of {{ preview.totalContacts }} contacts can receive this broadcast on Telegram now. The others have not connected to the school bot yet.
+        Only {{ preview.reachableNow }} out of {{ preview.totalContacts }} contacts can receive this broadcast on the selected channels now.
       </p>
       <p class="preview-warning danger" *ngIf="preview.reachableNow === 0">
-        No recipients can receive this broadcast on Telegram now.
+        No recipients can receive this broadcast on the selected channels now.
       </p>
     </div>
 
@@ -187,7 +191,7 @@
               <span [class]="'status-badge ' + statusClass(broadcast.status)">{{ broadcast.status }}</span>
               <p class="status-help" *ngIf="statusExplanation(broadcast)">{{ statusExplanation(broadcast) }}</p>
               <p class="status-help" *ngIf="broadcast.status === 'partially_failed'">
-                Some parents could not receive this broadcast because they have not connected to the school Telegram bot yet.
+                Some contacts could not receive this broadcast on the selected channels.
               </p>
               <p class="audit-line" *ngIf="auditLine('Sent by', broadcast.sentByName, broadcast.sentByRole, broadcast.sentAt)">
                 {{ auditLine('Sent by', broadcast.sentByName, broadcast.sentByRole, broadcast.sentAt) }}

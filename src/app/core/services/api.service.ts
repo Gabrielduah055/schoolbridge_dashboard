@@ -231,6 +231,8 @@ export interface BroadcastRecipientPreviewItem {
   className: string;
   telegramLinked: boolean;
   telegramChatId: string | null;
+  whatsappLinked: boolean;
+  whatsappChatId: string | null;
   canReceiveNow: boolean;
   reasonIfNotReachable: string | null;
 }
@@ -278,6 +280,7 @@ export interface BroadcastSendResult {
   broadcast: Broadcast;
   deliverySummary: {
     totalRecipients: number;
+    totalDeliveries?: number;
     sentCount: number;
     failedCount: number;
     pendingCount: number;
